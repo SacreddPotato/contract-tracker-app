@@ -4,7 +4,6 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class PasswordConfirmationTest extends TestCase
@@ -17,17 +16,19 @@ class PasswordConfirmationTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('password.confirm'));
 
-        $response->assertOk();
-
-        $response->assertInertia(fn (Assert $page) => $page
-            ->component('auth/confirm-password'),
-        );
+        $response
+            ->assertOk()
+            ->assertSee('id="root"', false)
+            ->assertDontSee('data-page', false);
     }
 
-    public function test_password_confirmation_requires_authentication()
+    public function test_password_confirmation_screen_is_react_owned_for_guests()
     {
         $response = $this->get(route('password.confirm'));
 
-        $response->assertRedirect(route('login'));
+        $response
+            ->assertOk()
+            ->assertSee('id="root"', false)
+            ->assertDontSee('data-page', false);
     }
 }

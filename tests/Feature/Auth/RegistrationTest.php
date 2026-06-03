@@ -24,7 +24,7 @@ class RegistrationTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_new_users_can_register()
+    public function test_new_users_can_register_without_backend_redirects()
     {
         $response = $this->post(route('register.store'), [
             'name' => 'Test User',
@@ -34,6 +34,8 @@ class RegistrationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response
+            ->assertCreated()
+            ->assertJson(['registered' => true]);
     }
 }

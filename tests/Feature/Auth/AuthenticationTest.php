@@ -19,7 +19,7 @@ class AuthenticationTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_users_can_authenticate_using_the_login_screen()
+    public function test_users_can_authenticate_through_the_backend_without_redirects()
     {
         $user = User::factory()->create();
 
@@ -29,10 +29,15 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response
+            ->assertOk()
+            ->assertJson([
+                'authenticated' => true,
+                'two_factor' => false,
+            ]);
     }
 
-    public function test_users_with_two_factor_enabled_are_redirected_to_two_factor_challenge()
+    public function test_users_with_two_factor_enabled_receive_a_json_challenge()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
@@ -48,7 +53,9 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertRedirect(route('two-factor.login'));
+        $response
+            ->assertOk()
+            ->assertJson(['two_factor' => true]);
         $response->assertSessionHas('login.id', $user->id);
         $this->assertGuest();
     }
@@ -71,7 +78,7 @@ class AuthenticationTest extends TestCase
 
         $response = $this->actingAs($user)->post(route('logout'));
 
-        $response->assertRedirect(route('home'));
+        $response->assertNoContent();
 
         $this->assertGuest();
     }

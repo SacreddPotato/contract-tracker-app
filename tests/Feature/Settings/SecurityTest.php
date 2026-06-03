@@ -5,15 +5,15 @@ namespace Tests\Feature\Settings;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class SecurityTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_security_page_is_displayed()
+    public function test_security_settings_are_returned_as_api_json()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
@@ -27,36 +27,45 @@ class SecurityTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->actingAs($user)
+        Sanctum::actingAs($user);
+
+        $this
             ->withSession(['auth.password_confirmed_at' => time()])
-            ->get(route('security.edit'))
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('settings/security')
-                ->where('canManagePasskeys', true)
-                ->where('passkeys', [])
-                ->where('canManageTwoFactor', true)
-                ->where('twoFactorEnabled', false),
-            );
+            ->getJson(route('api.settings.security.show'))
+            ->assertOk()
+            ->assertJsonPath('data.can_manage_passkeys', true)
+            ->assertJsonPath('data.passkeys', [])
+            ->assertJsonPath('data.can_manage_two_factor', true)
+            ->assertJsonPath('data.two_factor_enabled', false)
+            ->assertJsonStructure([
+                'data' => [
+                    'can_manage_two_factor',
+                    'can_manage_passkeys',
+                    'passkeys',
+                    'password_rules',
+                ],
+            ]);
     }
 
-    public function test_security_page_requires_password_confirmation_when_enabled()
+    public function test_security_settings_require_password_confirmation_when_enabled()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
         $user = User::factory()->create();
+
+        Sanctum::actingAs($user);
 
         Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,
         ]);
 
-        $response = $this->actingAs($user)
-            ->get(route('security.edit'));
+        $response = $this->getJson(route('api.settings.security.show'));
 
-        $response->assertRedirect(route('password.confirm'));
+        $response->assertStatus(423);
     }
 
-    public function test_security_page_renders_without_two_factor_when_feature_is_disabled()
+    public function test_security_settings_render_without_two_factor_when_feature_is_disabled()
     {
         $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
@@ -64,36 +73,33 @@ class SecurityTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->actingAs($user)
+        Sanctum::actingAs($user);
+
+        $this
             ->withSession(['auth.password_confirmed_at' => time()])
-            ->get(route('security.edit'))
+            ->getJson(route('api.settings.security.show'))
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('settings/security')
-                ->where('canManagePasskeys', false)
-                ->where('passkeys', [])
-                ->where('canManageTwoFactor', false)
-                ->missing('twoFactorEnabled')
-                ->missing('requiresConfirmation'),
-            );
+            ->assertJsonPath('data.can_manage_passkeys', false)
+            ->assertJsonPath('data.passkeys', [])
+            ->assertJsonPath('data.can_manage_two_factor', false)
+            ->assertJsonMissingPath('data.two_factor_enabled')
+            ->assertJsonMissingPath('data.requires_confirmation');
     }
 
     public function test_password_can_be_updated()
     {
         $user = User::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $response = $this
-            ->actingAs($user)
-            ->from(route('security.edit'))
-            ->put(route('user-password.update'), [
+            ->putJson(route('api.settings.security.password.update'), [
                 'current_password' => 'password',
                 'password' => 'new-password',
                 'password_confirmation' => 'new-password',
             ]);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('security.edit'));
+        $response->assertNoContent();
 
         $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
     }
@@ -102,17 +108,17 @@ class SecurityTest extends TestCase
     {
         $user = User::factory()->create();
 
+        Sanctum::actingAs($user);
+
         $response = $this
-            ->actingAs($user)
-            ->from(route('security.edit'))
-            ->put(route('user-password.update'), [
+            ->putJson(route('api.settings.security.password.update'), [
                 'current_password' => 'wrong-password',
                 'password' => 'new-password',
                 'password_confirmation' => 'new-password',
             ]);
 
         $response
-            ->assertSessionHasErrors('current_password')
-            ->assertRedirect(route('security.edit'));
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('current_password');
     }
 }
