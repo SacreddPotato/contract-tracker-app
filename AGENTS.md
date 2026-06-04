@@ -2,6 +2,22 @@
 
 These rules apply to all future AI-assisted work in this project. Follow them before making code changes, and treat them as project-level requirements unless the user explicitly overrides them.
 
+## Context Maintenance
+
+- After Codex context compaction, reread this file before making or planning changes, then continue from the current git/worktree/PR state rather than relying on memory from the pre-compaction chat.
+- When a conversation establishes durable project decisions, release rules, architecture constraints, or operational facts that future agents must know, update this file in the same branch before handoff.
+- Keep this file concise and durable. Do not add turn-by-turn transcripts, temporary debugging notes, secrets, local machine-only paths unless required for this repo, or facts that can be discovered from source files.
+- If this file conflicts with the current user request, ask only when the conflict is high risk; otherwise follow the user's explicit override and update this file when the override becomes a durable project rule.
+
+## Current Project Context
+
+- Active MVP work is tracked on branch `codex/mvp-employee-dashboard` and PR #1 against `main`. Do not push directly to `main`.
+- The MVP employee dashboard is React-owned and uses Firebase anonymous auth plus Firestore client access at `users/{uid}/employees/{employeeId}`. Employee dates are stored as `YYYY-MM-DD` strings; optional iqama dates are stored as `null`.
+- The local Laravel SPA host injects runtime frontend config, including Firebase web config and whether the app is running under NativePHP. Do not rely on build-time-only Firebase values for packaged desktop releases.
+- Native app chrome is custom and React-rendered only when the runtime config reports NativePHP. NativePHP opens the main window frameless and hides/removes the default menu.
+- Whole-program updates use NativePHP/Electron updater through GitHub Releases. The app checks once on startup, tracks updater status through local Laravel update APIs, and prompts the user to restart/install after an update is downloaded.
+- `v1.0.0` must be created after the PR merges to `main`, not on the feature branch. The release tag should point at the merged `main` commit so the Windows executable is built from production source.
+
 ## Project Architecture
 
 - This project is a Laravel API backend with a React frontend.
