@@ -70,7 +70,7 @@ class EmployeeApiTest extends TestCase
 
         Http::assertSent(fn ($request) => $request->method() === 'POST'
             && $request->url() === 'https://project.supabase.co/rest/v1/employees?select=id,owner_id,name,contract_start_date,contract_end_date,iqama_start_date,iqama_end_date,created_at,updated_at'
-            && $request['owner_id'] === '11111111-1111-1111-1111-111111111111'
+            && $request['owner_id'] === '0'
             && $request['name'] === 'Ahmed Ali');
     }
 

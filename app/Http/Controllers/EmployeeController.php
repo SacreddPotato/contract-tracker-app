@@ -33,7 +33,7 @@ class EmployeeController extends Controller
         return EmployeeResource::make(
             $this->employees->create(
                 (string) $request->bearerToken(),
-                $user['id'],
+                '0',
                 $request->normalizedEmployeeData(),
             ),
         );

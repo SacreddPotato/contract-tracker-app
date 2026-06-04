@@ -47,6 +47,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 ## Supabase, Database, Models, Factories, And Seeders
 
 - Supabase Row Level Security is the authoritative data-access boundary for client-owned product data.
+- **Tenant Rules**: Because "owners" and user-specific teams are still a pending decision, all shared tenant access currently uses `owner_id = '0'`. New employees must be created with `owner_id = '0'`, and fetching or updates should permit anyone to manipulate data where `owner_id = '0'` as a shared global pool.
 - React may authenticate with Supabase only through dedicated frontend auth services, hooks, or utilities. Do not scatter Supabase calls directly through UI components.
 - Product data access should go through Laravel API endpoints unless the user explicitly chooses direct Supabase client access for a feature.
 - Every new Supabase table or row shape must include matching SQL schema, constraints, indexes when useful, RLS policies, and verification tests.

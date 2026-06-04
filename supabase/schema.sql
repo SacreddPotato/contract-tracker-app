@@ -2,7 +2,7 @@ create extension if not exists "pgcrypto";
 
 create table if not exists public.employees (
     id uuid primary key default gen_random_uuid(),
-    owner_id uuid not null references auth.users(id) on delete cascade,
+    owner_id text not null default '0',
     name text not null check (length(btrim(name)) > 0),
     contract_start_date date not null,
     contract_end_date date not null,
@@ -59,26 +59,26 @@ create policy "Employees are selectable by owner"
     on public.employees
     for select
     to authenticated
-    using (owner_id = auth.uid());
+    using (owner_id = '0');
 
 drop policy if exists "Employees are insertable by owner" on public.employees;
 create policy "Employees are insertable by owner"
     on public.employees
     for insert
     to authenticated
-    with check (owner_id = auth.uid());
+    with check (owner_id = '0');
 
 drop policy if exists "Employees are updatable by owner" on public.employees;
 create policy "Employees are updatable by owner"
     on public.employees
     for update
     to authenticated
-    using (owner_id = auth.uid())
-    with check (owner_id = auth.uid());
+    using (owner_id = '0')
+    with check (owner_id = '0');
 
 drop policy if exists "Employees are deletable by owner" on public.employees;
 create policy "Employees are deletable by owner"
     on public.employees
     for delete
     to authenticated
-    using (owner_id = auth.uid());
+    using (owner_id = '0');
