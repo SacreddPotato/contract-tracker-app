@@ -26,6 +26,8 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Create auto-patch tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -52,3 +54,4 @@ jobs:
 
           git tag -a "$TAG" "$SHA" -m "Release $TAG"
           git push origin "$TAG"
+          gh workflow run release-windows.yml --ref "$TAG"
