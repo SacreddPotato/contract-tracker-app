@@ -223,7 +223,7 @@ function SettingsView() {
                         <button
                             aria-checked={startup.preference.enabled}
                             className={cn(
-                                'relative h-7 w-12 rounded-full border transition-colors focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
+                                'relative h-7 w-12 rounded-full border transition-colors focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60',
                                 startup.preference.enabled
                                     ? 'border-primary bg-primary'
                                     : 'border-input bg-muted',

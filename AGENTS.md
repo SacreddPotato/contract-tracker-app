@@ -127,6 +127,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 ## Code Quality
 
 - Follow existing Laravel, React, TypeScript, and formatting conventions.
+- Before committing or handing off code changes, run the relevant formatting checks. For frontend/resource changes, always run `npm run format:check` or apply Prettier with `npm run format`/targeted `prettier --write` first, then rerun the check.
 - Keep changes scoped to the user's request.
 - Do not edit `vendor/`, `node_modules/`, generated build assets, or framework cache files unless explicitly requested.
 - Prefer dependency injection over facades in services when it improves testability.
