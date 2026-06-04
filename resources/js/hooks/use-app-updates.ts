@@ -3,7 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     checkForAppUpdates,
     checkForAppUpdatesOnStartup,
+    getAppUpdateStatus,
     getAppVersion,
+    installDownloadedAppUpdate,
 } from '@/services/app-updates';
 import type {
     AppUpdateCheckResult,
@@ -13,6 +15,7 @@ import type {
 
 export type AppUpdateState = {
     checkNow: () => Promise<AppUpdateCheckResult>;
+    installNow: () => Promise<AppUpdateCheckResult>;
     isChecking: boolean;
     status: AppUpdateStatus | null;
     version: AppVersionMetadata | null;
@@ -60,6 +63,19 @@ export function useAppUpdates({
         }
     }, []);
 
+    const installNow = useCallback(async () => {
+        setIsChecking(true);
+
+        try {
+            const result = await installDownloadedAppUpdate();
+            setStatus(result.status);
+
+            return result;
+        } finally {
+            setIsChecking(false);
+        }
+    }, []);
+
     useEffect(() => {
         if (!checkOnStartup) {
             return;
@@ -78,8 +94,29 @@ export function useAppUpdates({
         };
     }, [checkOnStartup]);
 
+    useEffect(() => {
+        if (status !== 'checking') {
+            return;
+        }
+
+        let cancelled = false;
+        const interval = window.setInterval(() => {
+            void getAppUpdateStatus().then((result) => {
+                if (!cancelled) {
+                    setStatus(result.status);
+                }
+            });
+        }, 10_000);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(interval);
+        };
+    }, [status]);
+
     return {
         checkNow,
+        installNow,
         isChecking,
         status,
         version,

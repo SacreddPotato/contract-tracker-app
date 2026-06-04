@@ -1,58 +1,57 @@
-name: tag main release commit
+name: tag release commit
 
 on:
-  workflow_run:
-    workflows:
-      - qa
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, for example v1.0.0'
+        required: true
+        type: string
 
 permissions:
-  actions: write
   contents: write
 
 jobs:
   tag:
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout successful commit
+      - name: Validate release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="${{ inputs.tag }}"
+
+          if [[ ! "$TAG" =~ ^v[1-9][0-9]*\.[0-9]+\.[0-9]+([-.+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tags must be v-prefixed SemVer starting at v1.0.0 or later."
+            exit 1
+          fi
+
+      - name: Checkout target ref
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: main
 
-      - name: Create auto-patch tag
+      - name: Create release tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
 
+          TAG="${{ inputs.tag }}"
+          SHA="$(git rev-parse HEAD)"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch --tags --force
 
-          SHA="${{ github.event.workflow_run.head_sha }}"
-
-          if git tag --points-at "$SHA" | grep -Eq '^v0\.1\.[0-9]+$'; then
-            echo "Commit $SHA already has a v0.1.x tag."
-            exit 0
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists."
+            exit 1
           fi
-
-          RUN_NUMBER="${{ github.run_number }}"
-          TAG="v0.1.${RUN_NUMBER}"
-          COUNTER=0
-
-          while git rev-parse "$TAG" >/dev/null 2>&1; do
-            COUNTER=$((COUNTER + 1))
-            TAG="v0.1.$((RUN_NUMBER + COUNTER))"
-          done
 
           git tag -a "$TAG" "$SHA" -m "Release $TAG"
           git push origin "$TAG"
-          gh workflow run release-windows.yml --ref "$TAG"

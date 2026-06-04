@@ -75,6 +75,15 @@ jobs:
       - name: Frontend update tests
         run: npm run test:frontend-updates
 
+      - name: Frontend window tests
+        run: npm run test:frontend-window
+
+      - name: Frontend employee tests
+        run: npm run test:frontend-employees
+
+      - name: Frontend Firebase tests
+        run: npm run test:frontend-firebase
+
       - name: Build frontend
         run: npm run build
 

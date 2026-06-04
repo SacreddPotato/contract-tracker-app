@@ -12,6 +12,12 @@ class SpaController extends Controller
         $appearance = $request->cookie('appearance') ?? 'system';
         $appearanceJson = json_encode($appearance, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $darkClass = $appearance === 'dark' ? ' class="dark"' : '';
+        $frontendConfigJson = json_encode([
+            'firebase' => config('firebase.web'),
+            'native' => [
+                'running' => (bool) config('nativephp-internal.running'),
+            ],
+        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $locale = e(str_replace('_', '-', app()->getLocale()));
         $title = e(config('app.name', 'Laravel'));
         $viteTags = Vite::reactRefresh()?->toHtml().Vite::withEntryPoints([
@@ -38,6 +44,10 @@ class SpaController extends Controller
                             }
                         }
                     })();
+                </script>
+
+                <script>
+                    window.__contractTrackerConfig = {$frontendConfigJson};
                 </script>
 
                 <style>

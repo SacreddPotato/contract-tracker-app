@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\AppVersionService;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
@@ -31,6 +32,12 @@ class AppVersionTest extends TestCase
             ->assertJson([
                 'status' => 'disabled',
             ]);
+
+        $this->postJson('/api/app/updates/install')
+            ->assertOk()
+            ->assertJson([
+                'status' => 'disabled',
+            ]);
     }
 
     public function test_it_does_not_run_desktop_update_checks_outside_production_builds(): void
@@ -42,5 +49,36 @@ class AppVersionTest extends TestCase
             ->assertJson([
                 'status' => 'unavailable',
             ]);
+
+        $this->postJson('/api/app/updates/install')
+            ->assertOk()
+            ->assertJson([
+                'status' => 'unavailable',
+            ]);
+    }
+
+    public function test_it_can_install_downloaded_native_updates_through_the_update_service(): void
+    {
+        $calls = [];
+
+        $this->app->instance(AppVersionService::class, new class($calls) extends AppVersionService
+        {
+            public function __construct(private array &$calls) {}
+
+            public function installDownloadedUpdate(): string
+            {
+                $this->calls[] = 'install';
+
+                return 'installing';
+            }
+        });
+
+        $this->postJson('/api/app/updates/install')
+            ->assertOk()
+            ->assertJson([
+                'status' => 'installing',
+            ]);
+
+        $this->assertSame(['install'], $calls);
     }
 }

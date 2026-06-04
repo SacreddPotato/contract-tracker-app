@@ -10,18 +10,58 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    function ownsIncomingDocument(userId) {
-      return request.resource.data.ownerId == userId;
+    function employeeFields() {
+      return [
+        'ownerId',
+        'name',
+        'contractStartDate',
+        'contractEndDate',
+        'iqamaStartDate',
+        'iqamaEndDate',
+        'createdAt',
+        'updatedAt'
+      ];
     }
 
-    function ownsExistingDocument(userId) {
-      return resource.data.ownerId == userId;
+    function isDateOnly(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isOptionalDateOnly(value) {
+      return value == null || isDateOnly(value);
+    }
+
+    function isIsoTimestamp(value) {
+      return value is string && value.matches('^\\d{4}-\\d{2}-\\d{2}T.+Z$');
+    }
+
+    function isValidEmployee(userId) {
+      return request.resource.data.keys().hasAll(employeeFields())
+        && request.resource.data.keys().hasOnly(employeeFields())
+        && request.resource.data.ownerId == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && isDateOnly(request.resource.data.contractStartDate)
+        && isDateOnly(request.resource.data.contractEndDate)
+        && isOptionalDateOnly(request.resource.data.iqamaStartDate)
+        && isOptionalDateOnly(request.resource.data.iqamaEndDate)
+        && isIsoTimestamp(request.resource.data.createdAt)
+        && isIsoTimestamp(request.resource.data.updatedAt);
+    }
+
+    match /users/{userId}/employees/{employeeId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && resource.data.ownerId == userId;
+      allow create: if isOwner(userId) && isValidEmployee(userId);
+      allow update: if isOwner(userId)
+        && resource.data.ownerId == userId
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && isValidEmployee(userId);
     }
 
     match /users/{userId}/{document=**} {
-      allow read, delete: if isOwner(userId) && ownsExistingDocument(userId);
-      allow create: if isOwner(userId) && ownsIncomingDocument(userId);
-      allow update: if isOwner(userId) && ownsExistingDocument(userId) && ownsIncomingDocument(userId);
+      allow read, write: if false;
     }
 
     match /{document=**} {
