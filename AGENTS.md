@@ -83,9 +83,14 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 
 - Windows is the first supported packaged desktop target.
 - NativePHP/GitHub Releases are the source of truth for desktop updates. Do not add a Firestore "latest version" document as the primary updater source unless the user explicitly changes the release model.
-- The app version must come from the release tag during packaged builds through `NATIVEPHP_APP_VERSION`.
+- Firestore must not store or own app version state unless the release model is explicitly changed. Empty Firestore collections after release builds are normal because Firestore is for user/product data, not updater metadata.
+- Release tags stay `v0.1.x`, but the packaged app version passed through `NATIVEPHP_APP_VERSION` must be plain SemVer such as `0.1.x` without the leading `v`.
+- Every Windows release must publish the installer, blockmap, and `latest.yml` to GitHub Releases because those assets are what NativePHP/Electron update checks consume.
 - Local update APIs may expose installed version metadata and trigger NativePHP update checks, but they must not manually download replacement executables.
+- React startup/manual update checks must call the local Laravel update API through a dedicated frontend service or hook. Do not scatter updater calls through UI components.
+- Check for updates once on React app startup and expose a manual settings action. Do not call `AutoUpdater::checkForUpdates()` repeatedly because duplicate calls can duplicate downloads.
 - The updater must stay disabled for local development by default.
+- Public GitHub Releases are the default updater source. Private releases require a token strategy that does not bundle long-lived secrets into the packaged app.
 - Treat `ext-zip` as a required PHP extension for NativePHP build environments.
 
 ## GitHub Actions, Tagging, And Releases
@@ -95,6 +100,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - On successful pushes to `main`, the repository creates one auto-patch tag for the successful head commit using `v0.1.<run_number>`.
 - Tag workflows must not run for tag pushes or recursively create additional tags.
 - Every `v*` tag should trigger a Windows NativePHP release build and upload the executable artifacts to a GitHub Release.
+- Release workflows must verify that the GitHub Release contains the Windows installer, blockmap, and `latest.yml` before publishing the release.
 - Release workflows must use GitHub Actions secrets and environment variables. Do not commit release tokens or production secrets.
 
 ## Testing And Verification

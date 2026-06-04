@@ -11,6 +11,7 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
+        "test:frontend-updates": "node --experimental-strip-types --test tests/frontend/app-updates.test.ts",
         "test:firestore-rules": "node scripts/run-firestore-rules-tests.mjs",
         "types:check": "tsc --noEmit"
     },
