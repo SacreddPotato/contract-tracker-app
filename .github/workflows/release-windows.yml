@@ -69,6 +69,33 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item .env.production.example .env
+
+          $firebaseKeys = @(
+            'VITE_FIREBASE_API_KEY',
+            'VITE_FIREBASE_AUTH_DOMAIN',
+            'VITE_FIREBASE_PROJECT_ID',
+            'VITE_FIREBASE_STORAGE_BUCKET',
+            'VITE_FIREBASE_MESSAGING_SENDER_ID',
+            'VITE_FIREBASE_APP_ID'
+          )
+
+          $missing = $firebaseKeys | Where-Object {
+            [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_))
+          }
+
+          if ($missing) {
+            throw "Missing Firebase repository variables: $($missing -join ', '). Set them under Settings > Secrets and variables > Actions > Variables."
+          }
+
+          # The template ships these keys empty; replace them with the real
+          # repository-variable values so both Vite (import.meta.env) and the
+          # runtime PHP config (config/firebase.php) ship populated.
+          $envLines = Get-Content .env | Where-Object { $_ -notmatch '^VITE_FIREBASE_[A-Z_]+=' }
+          foreach ($key in $firebaseKeys) {
+            $envLines += "$key=$([Environment]::GetEnvironmentVariable($key))"
+          }
+          Set-Content -Path .env -Value $envLines -Encoding utf8
+
           php artisan key:generate --ansi
 
       - name: Build frontend
