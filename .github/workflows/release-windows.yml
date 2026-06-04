@@ -21,6 +21,8 @@ jobs:
       GITHUB_OWNER: ${{ github.repository_owner }}
       GITHUB_REPO: ${{ github.event.repository.name }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_RELEASE_TYPE: draft
       VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
       VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
       VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
@@ -64,23 +66,17 @@ jobs:
       - name: Publish NativePHP Windows app
         run: php artisan native:publish win --no-interaction
 
-      - name: Create draft release
+      - name: Verify release assets
         shell: pwsh
         run: |
-          gh release create "${env:GITHUB_REF_NAME}" --draft --title "${env:GITHUB_REF_NAME}" --notes "Automated NativePHP Windows build for ${env:GITHUB_REF_NAME}."
+          $releaseJson = gh release view "${env:GITHUB_REF_NAME}" --json assets,isDraft,tagName
+          $release = $releaseJson | ConvertFrom-Json
 
-      - name: Upload release assets
-        shell: pwsh
-        run: |
-          $assets = Get-ChildItem -Path dist -Recurse -File
-
-          if (-not $assets) {
-            throw "No NativePHP release assets were found under dist."
+          if (-not $release.assets -or $release.assets.Count -eq 0) {
+            throw "NativePHP did not publish any release assets for ${env:GITHUB_REF_NAME}."
           }
 
-          foreach ($asset in $assets) {
-            gh release upload "${env:GITHUB_REF_NAME}" $asset.FullName --clobber
-          }
+          $release.assets | ForEach-Object { Write-Host "Published asset: $($_.name)" }
 
       - name: Publish release
         shell: pwsh
