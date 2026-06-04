@@ -3,16 +3,12 @@ export {};
 declare global {
     interface Window {
         __contractTrackerConfig?: {
-            firebase?: Partial<{
-                apiKey: string | null;
-                appId: string | null;
-                authDomain: string | null;
-                messagingSenderId: string | null;
-                projectId: string | null;
-                storageBucket: string | null;
-            }>;
             native?: Partial<{
                 running: boolean;
+            }>;
+            supabase?: Partial<{
+                publishableKey: string | null;
+                url: string | null;
             }>;
         };
     }

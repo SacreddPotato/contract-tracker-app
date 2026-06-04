@@ -37,12 +37,6 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -81,14 +75,17 @@ jobs:
       - name: Frontend employee tests
         run: npm run test:frontend-employees
 
-      - name: Frontend Firebase tests
-        run: npm run test:frontend-firebase
+      - name: Frontend Supabase config tests
+        run: npm run test:frontend-supabase
+
+      - name: Frontend API tests
+        run: npm run test:frontend-api
+
+      - name: Supabase schema tests
+        run: npm run test:frontend-schema
 
       - name: Build frontend
         run: npm run build
-
-      - name: Firestore rules tests
-        run: npm run test:firestore-rules
 
       - name: PHP tests
         run: php artisan test

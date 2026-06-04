@@ -1,6 +1,6 @@
 # Contract Tracker
 
-Contract Tracker is a Laravel API + React frontend application. Product data is intended to use Firebase Auth plus Firestore client access, with Firestore Security Rules as the access-control boundary.
+Contract Tracker is a Laravel API + React frontend application. Product data uses Supabase Auth plus Supabase Postgres, with Row Level Security as the access-control boundary.
 
 ## Local Development
 
@@ -18,16 +18,14 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-Fill these Firebase web config values from Firebase Console > Project settings > Your apps > Web app config:
+Fill these Supabase values from Supabase Dashboard > Project Settings > API:
 
 ```env
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
 ```
+
+Enable Auth > Anonymous Sign-Ins in Supabase before running the app.
 
 Check the local setup:
 
@@ -51,26 +49,20 @@ npm run format:check
 npm run lint:check
 npm run types:check
 npm run build
-npm run test:firestore-rules
+npm run test:frontend-api
+npm run test:frontend-schema
+npm run test:frontend-supabase
 ```
 
-## Firebase
+## Supabase
 
-Firestore configuration lives in:
+Supabase setup SQL lives in:
 
-- `firebase.json`
-- `firestore.rules`
-- `firestore.indexes.json`
-- `tests/firestore`
+- `supabase/schema.sql`
 
-Deploy Firestore rules and indexes after logging in with Firebase CLI:
+Apply it through the Supabase SQL Editor, or with a temporary local/admin Postgres connection that is never packaged into the desktop app.
 
-```powershell
-firebase login
-firebase deploy --only firestore
-```
-
-The Firebase web config values are public client config, not Firebase Admin secrets. Do not commit Firebase Admin service-account JSON files.
+The Supabase URL and publishable key are safe public app config. Do not commit or package `sb_secret_...`, legacy `service_role` keys, database passwords, or service-account credentials.
 
 ## NativePHP Releases
 

@@ -16,12 +16,12 @@ const translations = {
     en: {
         addEmployee: 'Add employee',
         anonymousAuthUnavailable:
-            'Firebase is configured, but anonymous sign-in is unavailable. Enable Anonymous sign-in in Firebase Authentication, then reload the app.',
+            'Supabase is configured, but anonymous sign-in is unavailable. Enable Anonymous Sign-Ins in Supabase Auth, then reload the app.',
         appVersion: 'Version {version}',
         appVersionLoading: 'Version loading',
         authLoading: 'Preparing your workspace',
         authStateUnavailable:
-            'Firebase authentication is temporarily unavailable. Reload the app or check the Firebase project settings.',
+            'Supabase authentication is temporarily unavailable. Reload the app or check the Supabase project settings.',
         cancel: 'Cancel',
         confirmDelete: 'Delete',
         contractDates: 'Contract dates',
@@ -46,8 +46,8 @@ const translations = {
             'Add your first employee to start tracking contract deadlines.',
         emptyTitle: 'No employees yet',
         employeeName: 'Employee name',
-        firebaseMissing:
-            'Firebase is not configured. Add the VITE_FIREBASE_* web config values to start tracking employees.',
+        supabaseMissing:
+            'Supabase is not configured. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to start tracking employees.',
         formHelp:
             'Required fields are name, contract start date, and contract end date.',
         iqamaDates: 'Iqama dates',
@@ -96,12 +96,12 @@ const translations = {
     ar: {
         addEmployee: 'إضافة موظف',
         anonymousAuthUnavailable:
-            'تم إعداد Firebase، لكن تسجيل الدخول المجهول غير متاح. فعّل تسجيل الدخول المجهول في Firebase Authentication ثم أعد تحميل التطبيق.',
+            'تم إعداد Supabase، لكن تسجيل الدخول المجهول غير متاح. فعّل تسجيل الدخول المجهول في Supabase Auth ثم أعد تحميل التطبيق.',
         appVersion: 'Version {version}',
         appVersionLoading: 'Version loading',
         authLoading: 'جار تجهيز مساحة العمل',
         authStateUnavailable:
-            'مصادقة Firebase غير متاحة مؤقتا. أعد تحميل التطبيق أو تحقق من إعدادات مشروع Firebase.',
+            'مصادقة Supabase غير متاحة مؤقتا. أعد تحميل التطبيق أو تحقق من إعدادات مشروع Supabase.',
         cancel: 'إلغاء',
         confirmDelete: 'حذف',
         contractDates: 'تواريخ العقد',
@@ -123,8 +123,8 @@ const translations = {
         emptyDescription: 'أضف أول موظف لبدء متابعة مواعيد العقود.',
         emptyTitle: 'لا يوجد موظفون بعد',
         employeeName: 'اسم الموظف',
-        firebaseMissing:
-            'لم يتم إعداد Firebase. أضف قيم VITE_FIREBASE_* الخاصة بتطبيق الويب لبدء متابعة الموظفين.',
+        supabaseMissing:
+            'لم يتم إعداد Supabase. أضف SUPABASE_URL و SUPABASE_PUBLISHABLE_KEY لبدء متابعة الموظفين.',
         formHelp:
             'الحقول المطلوبة هي الاسم وتاريخ بداية العقد وتاريخ نهاية العقد.',
         iqamaDates: 'تواريخ الإقامة',

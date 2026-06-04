@@ -64,8 +64,11 @@
             "npm run format:check",
             "npm run lint:check",
             "npm run types:check",
+            "npm run test:frontend-api",
+            "npm run test:frontend-employees",
+            "npm run test:frontend-schema",
             "npm run test:frontend-updates",
-            "npm run test:firestore-rules",
+            "npm run test:frontend-supabase",
             "@test"
         ],
         "test": [

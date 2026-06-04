@@ -31,41 +31,30 @@ class DashboardTest extends TestCase
             ->assertDontSee('data-page', false);
     }
 
-    public function test_dashboard_shell_includes_runtime_firebase_web_config()
+    public function test_dashboard_shell_includes_runtime_supabase_web_config()
     {
-        config()->set('firebase.web', [
-            'apiKey' => 'test-api-key',
-            'authDomain' => 'test-project.firebaseapp.com',
-            'projectId' => 'test-project',
-            'storageBucket' => 'test-project.appspot.com',
-            'messagingSenderId' => '123456789',
-            'appId' => '1:123456789:web:abcdef',
-        ]);
+        config()->set('supabase.url', 'https://test-project.supabase.co');
+        config()->set('supabase.publishable_key', 'test-publishable-key');
 
         $response = $this->get(route('dashboard'));
 
         $response
             ->assertOk()
             ->assertSee('window.__contractTrackerConfig', false)
-            ->assertSee('"projectId":"test-project"', false);
+            ->assertSee('"url":"https:\/\/test-project.supabase.co"', false)
+            ->assertSee('"publishableKey":"test-publishable-key"', false);
     }
 
-    public function test_dashboard_shell_omits_empty_runtime_firebase_web_config_values()
+    public function test_dashboard_shell_omits_empty_runtime_supabase_web_config_values()
     {
-        config()->set('firebase.web', [
-            'apiKey' => '',
-            'authDomain' => null,
-            'projectId' => '   ',
-            'storageBucket' => '',
-            'messagingSenderId' => null,
-            'appId' => '',
-        ]);
+        config()->set('supabase.url', '   ');
+        config()->set('supabase.publishable_key', '');
 
         $response = $this->get(route('dashboard'));
 
         $response
             ->assertOk()
             ->assertSee('window.__contractTrackerConfig', false)
-            ->assertSee('"firebase":[]', false);
+            ->assertSee('"supabase":[]', false);
     }
 }

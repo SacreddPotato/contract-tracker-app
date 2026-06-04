@@ -10,8 +10,8 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Do not add new Inertia pages, Blade-driven product screens, or server-rendered frontend features.
 - Existing Inertia/server-rendered starter code is legacy starter structure and should be refactored away during future product work instead of extended.
 - Keep backend and frontend concerns separate. Do not put frontend presentation logic in Laravel controllers, and do not put backend business rules in React components.
-- Product data is backed by Firebase Auth plus Firestore client access. Do not reintroduce SQLite or another SQL database for product/domain data unless the user explicitly approves that architectural change.
-- Never package Firebase Admin credentials, service-account JSON, private keys, GitHub tokens, or other privileged secrets into the desktop app.
+- Product data is backed by Supabase Auth plus Supabase Postgres access through Laravel API orchestration and Supabase Row Level Security. Do not reintroduce Firebase, Firestore, SQLite, or another data store for product/domain data unless the user explicitly approves that architectural change.
+- Never package Supabase secret keys, legacy service-role keys, database passwords, private keys, GitHub tokens, service-account JSON files, or other privileged secrets into the desktop app.
 
 ## Laravel MVC Boundaries
 
@@ -44,13 +44,14 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Do not hide domain logic in route closures. API routes should point to controllers.
 - Keep route files focused on route registration and middleware grouping.
 
-## Firestore, Database, Models, Factories, And Seeders
+## Supabase, Database, Models, Factories, And Seeders
 
-- Firestore Security Rules are the authoritative data-access boundary for client-owned product data.
-- React may call Firestore only through dedicated frontend data services, hooks, or utilities. Do not scatter Firestore calls directly through UI components.
-- Every new Firestore collection or document shape must include matching security rules, emulator fixtures or setup data, and Firestore rules tests.
-- Firestore rules must enforce user ownership and must reject cross-user reads, writes, ownership-field changes, and unauthenticated access unless a route is intentionally public.
-- Do not invent Laravel migrations for Firestore-backed product data. Firestore structure changes belong in rules, indexes, typed frontend services, and emulator tests.
+- Supabase Row Level Security is the authoritative data-access boundary for client-owned product data.
+- React may authenticate with Supabase only through dedicated frontend auth services, hooks, or utilities. Do not scatter Supabase calls directly through UI components.
+- Product data access should go through Laravel API endpoints unless the user explicitly chooses direct Supabase client access for a feature.
+- Every new Supabase table or row shape must include matching SQL schema, constraints, indexes when useful, RLS policies, and verification tests.
+- RLS policies must enforce user ownership and must reject cross-user reads, writes, ownership-field changes, and unauthenticated access unless a route is intentionally public.
+- Do not package Supabase database passwords, `sb_secret_*`, or legacy `service_role` credentials into the desktop app.
 - If SQL is explicitly reintroduced for a local-only or backend-only concern, every new model must include a relevant factory.
 - If SQL is explicitly reintroduced, every new migration that introduces or changes domain data must be paired with factory and seeder updates when seed data is useful for development or verification.
 - After creating or changing SQL models, migrations, factories, or seeders, verify the database by running migrations and seeders in a local or testing-safe environment.
@@ -74,7 +75,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - React code belongs under `resources/js`.
 - Keep UI components focused on rendering and interaction.
 - Put API calls, data mapping, and shared client behavior in clearly named hooks, services, or utilities.
-- Put Firebase initialization in a single shared bootstrap module and reuse it through frontend data services.
+- Put Supabase initialization in a single shared bootstrap module and reuse it through frontend auth/data services.
 - Do not duplicate backend validation as business truth. Client validation may improve UX, but Laravel remains authoritative.
 - Reuse existing UI primitives and project styling conventions before introducing new component patterns.
 - Keep generated route/action helpers only if they remain compatible with the API-first direction.
@@ -82,8 +83,8 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 ## NativePHP Desktop, Releases, And Updates
 
 - Windows is the first supported packaged desktop target.
-- NativePHP/GitHub Releases are the source of truth for desktop updates. Do not add a Firestore "latest version" document as the primary updater source unless the user explicitly changes the release model.
-- Firestore must not store or own app version state unless the release model is explicitly changed. Empty Firestore collections after release builds are normal because Firestore is for user/product data, not updater metadata.
+- NativePHP/GitHub Releases are the source of truth for desktop updates. Do not add a Supabase "latest version" row as the primary updater source unless the user explicitly changes the release model.
+- Supabase must not store or own app version state unless the release model is explicitly changed. Empty product tables after release builds are normal because Supabase is for user/product data, not updater metadata.
 - Release tags use SemVer with a leading `v`, starting at `v1.0.0`. The packaged app version passed through `NATIVEPHP_APP_VERSION` must be plain SemVer such as `1.0.0` without the leading `v`.
 - Every Windows release must publish the installer, blockmap, and `latest.yml` to GitHub Releases because those assets are what NativePHP/Electron update checks consume.
 - Local update APIs may expose installed version metadata and trigger NativePHP update checks, but they must not manually download replacement executables.
@@ -108,7 +109,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 
 - Prefer Laravel feature tests for API behavior.
 - Prefer unit tests for service classes and isolated domain logic.
-- Prefer Firestore emulator tests for Firestore Security Rules and client data-access boundaries.
+- Prefer Supabase SQL/RLS verification for data-access boundaries.
 - Add or update tests when changing validation, authorization, resources, services, models, or API behavior.
 - Run the narrowest meaningful checks during development, then run broader checks before handoff when relevant.
 - Relevant backend checks include:
@@ -119,8 +120,8 @@ These rules apply to all future AI-assisted work in this project. Follow them be
   - `npm run lint:check`
   - `npm run types:check`
   - `npm run build`
-- Relevant Firestore checks include:
-  - `npm run test:firestore-rules`
+- Relevant Supabase checks include:
+  - `npm run test:frontend-schema`
 - Relevant release checks include validating GitHub Actions YAML and confirming NativePHP build commands run in the target CI environment.
 - For documentation-only changes, automated tests are not required unless the documentation change is coupled to code changes.
 

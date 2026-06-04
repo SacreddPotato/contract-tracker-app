@@ -13,10 +13,10 @@ class SpaController extends Controller
         $appearanceJson = json_encode($appearance, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $darkClass = $appearance === 'dark' ? ' class="dark"' : '';
         $frontendConfigJson = json_encode([
-            'firebase' => $this->runtimeFirebaseConfig(),
             'native' => [
                 'running' => (bool) config('nativephp-internal.running'),
             ],
+            'supabase' => $this->runtimeSupabaseConfig(),
         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $locale = e(str_replace('_', '-', app()->getLocale()));
         $title = e(config('app.name', 'Laravel'));
@@ -79,9 +79,12 @@ class SpaController extends Controller
     /**
      * @return array<string, string>
      */
-    private function runtimeFirebaseConfig(): array
+    private function runtimeSupabaseConfig(): array
     {
-        return collect(config('firebase.web'))
+        return collect([
+            'publishableKey' => config('supabase.publishable_key'),
+            'url' => config('supabase.url'),
+        ])
             ->filter(fn ($value) => is_string($value) && trim($value) !== '')
             ->map(fn (string $value) => trim($value))
             ->all();

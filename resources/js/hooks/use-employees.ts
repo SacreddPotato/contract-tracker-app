@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { firebaseRuntime } from '@/lib/firebase';
 import {
     createEmployee,
     deleteEmployee,
-    subscribeToEmployees,
+    listEmployees,
     updateEmployee,
-} from '@/services/employee-firestore';
+} from '@/services/employee-api';
 import type { Employee, EmployeeFormValues } from '@/services/employee-records';
 
 type EmployeeSubscriptionState = {
     employees: Employee[];
     error: Error | null;
     subscriptionKey: number;
-    userId: string | null;
+    accessToken: string | null;
 };
 
 type EmployeesState = {
@@ -29,92 +28,132 @@ type EmployeesState = {
     ) => Promise<void>;
 };
 
-export function useEmployees(userId: string | null): EmployeesState {
+export function useEmployees(accessToken: string | null): EmployeesState {
     const [state, setState] = useState<EmployeeSubscriptionState>({
+        accessToken: null,
         employees: [],
         error: null,
         subscriptionKey: 0,
-        userId: null,
     });
     const [subscriptionKey, setSubscriptionKey] = useState(0);
 
     useEffect(() => {
-        if (!userId || !firebaseRuntime) {
+        if (!accessToken) {
             return;
         }
 
-        return subscribeToEmployees(
-            firebaseRuntime.firestore,
-            userId,
-            (nextEmployees) => {
+        let cancelled = false;
+
+        void listEmployees({ accessToken })
+            .then((nextEmployees) => {
+                if (cancelled) {
+                    return;
+                }
+
                 setState({
+                    accessToken,
                     employees: nextEmployees,
                     error: null,
                     subscriptionKey,
-                    userId,
                 });
-            },
-            (nextError) => {
+            })
+            .catch((nextError: unknown) => {
+                if (cancelled) {
+                    return;
+                }
+
                 setState({
+                    accessToken,
                     employees: [],
-                    error: nextError,
+                    error:
+                        nextError instanceof Error
+                            ? nextError
+                            : new Error('Unable to load employees.'),
                     subscriptionKey,
-                    userId,
                 });
-            },
-        );
-    }, [subscriptionKey, userId]);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [accessToken, subscriptionKey]);
 
     const addEmployee = useCallback(
         async (values: EmployeeFormValues) => {
-            if (!userId || !firebaseRuntime) {
+            if (!accessToken) {
                 throw new Error('Employee storage is unavailable.');
             }
 
-            await createEmployee(firebaseRuntime.firestore, userId, values);
+            const employee = await createEmployee(values, { accessToken });
+
+            setState((current) => ({
+                ...current,
+                employees: [...current.employees, employee].sort(
+                    sortByContractEndDate,
+                ),
+            }));
         },
-        [userId],
+        [accessToken],
     );
 
     const saveEmployeeUpdate = useCallback(
         async (employeeId: string, values: EmployeeFormValues) => {
-            if (!userId || !firebaseRuntime) {
+            if (!accessToken) {
                 throw new Error('Employee storage is unavailable.');
             }
 
-            await updateEmployee(
-                firebaseRuntime.firestore,
-                userId,
-                employeeId,
-                values,
-            );
+            const employee = await updateEmployee(employeeId, values, {
+                accessToken,
+            });
+
+            setState((current) => ({
+                ...current,
+                employees: current.employees
+                    .map((currentEmployee) =>
+                        currentEmployee.id === employee.id
+                            ? employee
+                            : currentEmployee,
+                    )
+                    .sort(sortByContractEndDate),
+            }));
         },
-        [userId],
+        [accessToken],
     );
 
     const removeEmployee = useCallback(
         async (employeeId: string) => {
-            if (!userId || !firebaseRuntime) {
+            if (!accessToken) {
                 throw new Error('Employee storage is unavailable.');
             }
 
-            await deleteEmployee(firebaseRuntime.firestore, userId, employeeId);
+            await deleteEmployee(employeeId, { accessToken });
+
+            setState((current) => ({
+                ...current,
+                employees: current.employees.filter(
+                    (employee) => employee.id !== employeeId,
+                ),
+            }));
         },
-        [userId],
+        [accessToken],
     );
 
     return {
         addEmployee,
         deleteEmployee: removeEmployee,
-        employees: state.userId === userId ? state.employees : [],
-        error: state.userId === userId ? state.error : null,
+        employees: state.accessToken === accessToken ? state.employees : [],
+        error: state.accessToken === accessToken ? state.error : null,
         isLoading:
-            Boolean(userId) &&
-            (state.userId !== userId ||
+            Boolean(accessToken) &&
+            (state.accessToken !== accessToken ||
                 state.subscriptionKey !== subscriptionKey),
         retry: () => {
             setSubscriptionKey((key) => key + 1);
         },
         updateEmployee: saveEmployeeUpdate,
     };
+}
+
+function sortByContractEndDate(left: Employee, right: Employee): number {
+    return left.contractEndDate.localeCompare(right.contractEndDate);
 }

@@ -32,8 +32,7 @@ return [
         'content',
         'node_modules',
         '*/tests',
-        '*.firebase-adminsdk-*.json',
-        '*-firebase-adminsdk-*.json',
+        '*service-account*.json',
     ],
 
     'updater' => [

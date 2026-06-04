@@ -3,12 +3,16 @@
 use App\Http\Controllers\AppStartupController;
 use App\Http\Controllers\AppVersionController;
 use App\Http\Controllers\AppWindowController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Resources\UserResource;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::apiResource('employees', EmployeeController::class)
+    ->only(['index', 'store', 'update', 'destroy']);
 
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('/user', fn (Request $request) => UserResource::make($request->user()));

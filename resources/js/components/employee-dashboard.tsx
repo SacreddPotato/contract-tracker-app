@@ -24,7 +24,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useEmployees } from '@/hooks/use-employees';
-import { useFirebaseAnonymousUser } from '@/hooks/use-firebase-anonymous-user';
+import { useSupabaseAnonymousUser } from '@/hooks/use-supabase-anonymous-user';
 import { useI18n } from '@/i18n';
 import type { TranslationKey } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -62,8 +62,8 @@ export function EmployeeDashboard({
     nativeChrome?: boolean;
 }) {
     const { direction, language, setLanguage, t } = useI18n();
-    const auth = useFirebaseAnonymousUser();
-    const employeesState = useEmployees(auth.user?.uid ?? null);
+    const auth = useSupabaseAnonymousUser();
+    const employeesState = useEmployees(auth.session?.access_token ?? null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(
         null,
@@ -149,7 +149,7 @@ export function EmployeeDashboard({
                         <AlertCircle className="size-4" />
                         <AlertDescription>
                             {auth.errorReason === 'configurationMissing'
-                                ? t('firebaseMissing')
+                                ? t('supabaseMissing')
                                 : auth.errorReason === 'anonymousSignInFailed'
                                   ? t('anonymousAuthUnavailable')
                                   : t('authStateUnavailable')}
