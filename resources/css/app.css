@@ -130,11 +130,52 @@
 }
 
 @layer base {
+    html {
+        scrollbar-color: oklch(0.62 0.02 240) transparent;
+        scrollbar-width: thin;
+    }
+
+    ::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: oklch(0.62 0.02 240 / 0.55);
+        border: 2px solid transparent;
+        border-radius: 999px;
+        background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: oklch(0.52 0.025 240 / 0.8);
+        background-clip: content-box;
+    }
+
     * {
         @apply border-border;
     }
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    .dark {
+        scrollbar-color: oklch(0.72 0.02 240) transparent;
+    }
+}
+
+@layer utilities {
+    .app-drag-region {
+        -webkit-app-region: drag;
+        user-select: none;
+    }
+
+    .app-no-drag {
+        -webkit-app-region: no-drag;
     }
 }

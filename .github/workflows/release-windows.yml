@@ -87,7 +87,24 @@ jobs:
             throw "NativePHP did not publish any release assets for ${env:GITHUB_REF_NAME}."
           }
 
-          $release.assets | ForEach-Object { Write-Host "Published asset: $($_.name)" }
+          $assetNames = @($release.assets | ForEach-Object { $_.name })
+          $assetNames | ForEach-Object { Write-Host "Published asset: $_" }
+
+          $hasInstaller = $assetNames | Where-Object { $_ -match '\.exe$' }
+          $hasBlockmap = $assetNames | Where-Object { $_ -match '\.blockmap$' }
+          $hasLatestYml = $assetNames | Where-Object { $_ -eq 'latest.yml' }
+
+          if (-not $hasInstaller) {
+            throw "Missing Windows installer asset for ${env:GITHUB_REF_NAME}."
+          }
+
+          if (-not $hasBlockmap) {
+            throw "Missing blockmap asset for ${env:GITHUB_REF_NAME}."
+          }
+
+          if (-not $hasLatestYml) {
+            throw "Missing latest.yml asset for ${env:GITHUB_REF_NAME}."
+          }
 
       - name: Publish release
         shell: pwsh

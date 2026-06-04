@@ -84,9 +84,10 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Windows is the first supported packaged desktop target.
 - NativePHP/GitHub Releases are the source of truth for desktop updates. Do not add a Firestore "latest version" document as the primary updater source unless the user explicitly changes the release model.
 - Firestore must not store or own app version state unless the release model is explicitly changed. Empty Firestore collections after release builds are normal because Firestore is for user/product data, not updater metadata.
-- Release tags stay `v0.1.x`, but the packaged app version passed through `NATIVEPHP_APP_VERSION` must be plain SemVer such as `0.1.x` without the leading `v`.
+- Release tags use SemVer with a leading `v`, starting at `v1.0.0`. The packaged app version passed through `NATIVEPHP_APP_VERSION` must be plain SemVer such as `1.0.0` without the leading `v`.
 - Every Windows release must publish the installer, blockmap, and `latest.yml` to GitHub Releases because those assets are what NativePHP/Electron update checks consume.
 - Local update APIs may expose installed version metadata and trigger NativePHP update checks, but they must not manually download replacement executables.
+- Whole-program updates are handled by NativePHP/Electron through GitHub Releases. The app may prompt users to restart/install after an update is downloaded, but it must not silently restart while the user is working.
 - React startup/manual update checks must call the local Laravel update API through a dedicated frontend service or hook. Do not scatter updater calls through UI components.
 - Check for updates once on React app startup and expose a manual settings action. Do not call `AutoUpdater::checkForUpdates()` repeatedly because duplicate calls can duplicate downloads.
 - The updater must stay disabled for local development by default.
@@ -97,7 +98,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 
 - CI QA must pass before any automated release tag is created.
 - QA workflows must be check-only. Do not run mutating formatters or auto-commit style fixes in CI.
-- On successful pushes to `main`, the repository creates one auto-patch tag for the successful head commit using `v0.1.<run_number>`.
+- Release tags are created intentionally after QA succeeds, either manually or by an explicitly requested release workflow. Do not auto-create release tags on every successful `main` push.
 - Tag workflows must not run for tag pushes or recursively create additional tags.
 - Every `v*` tag should trigger a Windows NativePHP release build and upload the executable artifacts to a GitHub Release.
 - Release workflows must verify that the GitHub Release contains the Windows installer, blockmap, and `latest.yml` before publishing the release.

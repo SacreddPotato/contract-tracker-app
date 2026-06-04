@@ -22,4 +22,18 @@ class AppVersionController extends Controller
             'status' => $this->versions->checkForUpdates(),
         ]);
     }
+
+    public function updateStatus(): JsonResponse
+    {
+        return response()->json([
+            'status' => $this->versions->updateStatus(),
+        ]);
+    }
+
+    public function installUpdate(): JsonResponse
+    {
+        return response()->json([
+            'status' => $this->versions->installDownloadedUpdate(),
+        ]);
+    }
 }

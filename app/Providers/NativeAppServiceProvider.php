@@ -10,13 +10,15 @@ class NativeAppServiceProvider
         $window = 'Native\\Desktop\\Facades\\Window';
 
         if (class_exists($menu)) {
-            $menu::default();
+            $menu::create();
         }
 
         if (class_exists($window)) {
             $window::open()
                 ->route('home')
-                ->title(config('app.name'));
+                ->title(config('app.name'))
+                ->frameless()
+                ->hideMenu();
         }
     }
 }

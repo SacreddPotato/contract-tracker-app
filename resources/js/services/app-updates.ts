@@ -1,4 +1,10 @@
-export type AppUpdateStatus = 'disabled' | 'checking' | 'unavailable';
+export type AppUpdateStatus =
+    | 'checking'
+    | 'disabled'
+    | 'downloaded'
+    | 'error'
+    | 'installing'
+    | 'unavailable';
 
 export type AppUpdateCheckResult = {
     status: AppUpdateStatus;
@@ -16,12 +22,17 @@ export type AppUpdateFetcher = (
 ) => Promise<Response>;
 
 const appVersionPath = '/api/app/version';
+const appUpdateStatusPath = '/api/app/updates/status';
 const appUpdateCheckPath = '/api/app/updates/check';
+const appUpdateInstallPath = '/api/app/updates/install';
 
 function isAppUpdateStatus(status: unknown): status is AppUpdateStatus {
     return (
-        status === 'disabled' ||
         status === 'checking' ||
+        status === 'disabled' ||
+        status === 'downloaded' ||
+        status === 'error' ||
+        status === 'installing' ||
         status === 'unavailable'
     );
 }
@@ -50,6 +61,55 @@ export async function checkForAppUpdates({
     fetcher?: AppUpdateFetcher;
 } = {}): Promise<AppUpdateCheckResult> {
     const response = await fetcher(appUpdateCheckPath, {
+        headers: {
+            Accept: 'application/json',
+        },
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        return { status: 'unavailable' };
+    }
+
+    const payload = (await response.json()) as Partial<AppUpdateCheckResult>;
+
+    if (!isAppUpdateStatus(payload.status)) {
+        return { status: 'unavailable' };
+    }
+
+    return { status: payload.status };
+}
+
+export async function getAppUpdateStatus({
+    fetcher = fetch,
+}: {
+    fetcher?: AppUpdateFetcher;
+} = {}): Promise<AppUpdateCheckResult> {
+    const response = await fetcher(appUpdateStatusPath, {
+        headers: {
+            Accept: 'application/json',
+        },
+    });
+
+    if (!response.ok) {
+        return { status: 'unavailable' };
+    }
+
+    const payload = (await response.json()) as Partial<AppUpdateCheckResult>;
+
+    if (!isAppUpdateStatus(payload.status)) {
+        return { status: 'unavailable' };
+    }
+
+    return { status: payload.status };
+}
+
+export async function installDownloadedAppUpdate({
+    fetcher = fetch,
+}: {
+    fetcher?: AppUpdateFetcher;
+} = {}): Promise<AppUpdateCheckResult> {
+    const response = await fetcher(appUpdateInstallPath, {
         headers: {
             Accept: 'application/json',
         },

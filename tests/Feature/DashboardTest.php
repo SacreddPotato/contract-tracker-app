@@ -30,4 +30,23 @@ class DashboardTest extends TestCase
             ->assertSee('id="root"', false)
             ->assertDontSee('data-page', false);
     }
+
+    public function test_dashboard_shell_includes_runtime_firebase_web_config()
+    {
+        config()->set('firebase.web', [
+            'apiKey' => 'test-api-key',
+            'authDomain' => 'test-project.firebaseapp.com',
+            'projectId' => 'test-project',
+            'storageBucket' => 'test-project.appspot.com',
+            'messagingSenderId' => '123456789',
+            'appId' => '1:123456789:web:abcdef',
+        ]);
+
+        $response = $this->get(route('dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('window.__contractTrackerConfig', false)
+            ->assertSee('"projectId":"test-project"', false);
+    }
 }

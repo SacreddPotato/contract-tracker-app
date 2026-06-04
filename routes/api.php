@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AppVersionController;
+use App\Http\Controllers\AppWindowController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Resources\UserResource;
@@ -28,7 +29,18 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
 
 Route::prefix('app')->name('api.app.')->group(function () {
     Route::get('/version', [AppVersionController::class, 'show'])->name('version.show');
+    Route::get('/updates/status', [AppVersionController::class, 'updateStatus'])
+        ->name('updates.status');
     Route::post('/updates/check', [AppVersionController::class, 'checkForUpdates'])
         ->middleware('throttle:6,1')
         ->name('updates.check');
+    Route::post('/updates/install', [AppVersionController::class, 'installUpdate'])
+        ->middleware('throttle:6,1')
+        ->name('updates.install');
+    Route::post('/window/minimize', [AppWindowController::class, 'minimize'])
+        ->name('window.minimize');
+    Route::post('/window/maximize', [AppWindowController::class, 'maximize'])
+        ->name('window.maximize');
+    Route::post('/window/close', [AppWindowController::class, 'close'])
+        ->name('window.close');
 });

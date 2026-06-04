@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
     checkForAppUpdates,
     createStartupUpdateChecker,
+    installDownloadedAppUpdate,
 } from '../../resources/js/services/app-updates.ts';
 
 function jsonResponse(payload: unknown): Response {
@@ -50,4 +51,33 @@ test('manual update checks can be triggered repeatedly', async () => {
     assert.equal(requests.length, 2);
     assert.equal(requests[0]?.input, '/api/app/updates/check');
     assert.equal(requests[0]?.init?.method, 'POST');
+});
+
+test('app update installer posts to the backend install action', async () => {
+    const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+        [];
+    const fetcher = async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+    ): Promise<Response> => {
+        requests.push({ input, init });
+
+        return jsonResponse({ status: 'installing' });
+    };
+
+    assert.deepEqual(await installDownloadedAppUpdate({ fetcher }), {
+        status: 'installing',
+    });
+
+    assert.equal(requests[0]?.input, '/api/app/updates/install');
+    assert.equal(requests[0]?.init?.method, 'POST');
+});
+
+test('app update service accepts downloaded and error states from the backend', async () => {
+    const fetcher = async (): Promise<Response> =>
+        jsonResponse({ status: 'downloaded' });
+
+    assert.deepEqual(await checkForAppUpdates({ fetcher }), {
+        status: 'downloaded',
+    });
 });
