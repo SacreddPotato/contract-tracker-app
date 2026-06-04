@@ -22,6 +22,7 @@ class NativeWindowService
             match ($action) {
                 'minimize' => $window::minimize('main'),
                 'maximize' => $window::maximize('main'),
+                'restore' => $this->restore($window),
                 'close' => $window::close('main'),
                 default => null,
             };
@@ -30,5 +31,15 @@ class NativeWindowService
         }
 
         return 'handled';
+    }
+
+    /**
+     * NativePHP 2.2 exposes maximize/minimize but not unmaximize. Resizing the
+     * main window gives the custom titlebar a reliable restored state.
+     */
+    private function restore(string $window): void
+    {
+        $window::resize(1200, 800, 'main');
+        $window::position(80, 80, false, 'main');
     }
 }

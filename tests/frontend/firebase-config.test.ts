@@ -35,6 +35,37 @@ test('runtime Firebase config overrides empty build-time values', () => {
     assert.equal(hasRequiredFirebaseConfig(config), true);
 });
 
+test('empty runtime Firebase config does not override build-time values', () => {
+    const config = resolveFirebaseConfig({
+        runtimeConfig: {
+            apiKey: '',
+            appId: '',
+            authDomain: '',
+            messagingSenderId: '',
+            projectId: '',
+            storageBucket: '',
+        },
+        viteConfig: {
+            apiKey: 'build-api-key',
+            appId: 'build-app-id',
+            authDomain: 'build.firebaseapp.com',
+            messagingSenderId: '987654321',
+            projectId: 'build-project',
+            storageBucket: 'build.appspot.com',
+        },
+    });
+
+    assert.deepEqual(config, {
+        apiKey: 'build-api-key',
+        appId: 'build-app-id',
+        authDomain: 'build.firebaseapp.com',
+        messagingSenderId: '987654321',
+        projectId: 'build-project',
+        storageBucket: 'build.appspot.com',
+    });
+    assert.equal(hasRequiredFirebaseConfig(config), true);
+});
+
 test('missing required Firebase web config is detected', () => {
     const config = resolveFirebaseConfig({
         runtimeConfig: {

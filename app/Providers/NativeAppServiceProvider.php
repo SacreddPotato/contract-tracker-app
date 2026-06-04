@@ -18,6 +18,7 @@ class NativeAppServiceProvider
                 ->route('home')
                 ->title(config('app.name'))
                 ->frameless()
+                ->maximized()
                 ->hideMenu();
         }
     }

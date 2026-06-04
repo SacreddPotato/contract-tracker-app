@@ -1,4 +1,4 @@
-import { Minus, Square, X } from 'lucide-react';
+import { Maximize2, Minimize2, Minus, X } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -14,16 +14,31 @@ export function AppTitlebar() {
     const [pendingAction, setPendingAction] = useState<AppWindowAction | null>(
         null,
     );
+    const [isMaximized, setIsMaximized] = useState(true);
 
     async function runWindowAction(action: AppWindowAction) {
         setPendingAction(action);
 
         try {
-            await controlAppWindow(action);
+            const result = await controlAppWindow(action);
+
+            if (result.status === 'handled') {
+                if (action === 'maximize') {
+                    setIsMaximized(true);
+                }
+
+                if (action === 'restore') {
+                    setIsMaximized(false);
+                }
+            }
         } finally {
             setPendingAction(null);
         }
     }
+
+    const maximizeAction: AppWindowAction = isMaximized
+        ? 'restore'
+        : 'maximize';
 
     return (
         <div className="app-drag-region fixed inset-x-0 top-0 z-40 flex h-10 items-center justify-between border-b bg-background/95 text-foreground shadow-sm backdrop-blur">
@@ -39,13 +54,19 @@ export function AppTitlebar() {
                     <Minus className="size-4" />
                 </TitlebarButton>
                 <TitlebarButton
-                    disabled={pendingAction === 'maximize'}
-                    label={t('windowMaximize')}
+                    disabled={pendingAction === maximizeAction}
+                    label={
+                        isMaximized ? t('windowRestore') : t('windowMaximize')
+                    }
                     onClick={() => {
-                        void runWindowAction('maximize');
+                        void runWindowAction(maximizeAction);
                     }}
                 >
-                    <Square className="size-3.5" />
+                    {isMaximized ? (
+                        <Minimize2 className="size-3.5" />
+                    ) : (
+                        <Maximize2 className="size-3.5" />
+                    )}
                 </TitlebarButton>
                 <TitlebarButton
                     className="hover:bg-red-600 hover:text-white"

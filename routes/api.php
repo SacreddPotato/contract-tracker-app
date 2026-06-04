@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppStartupController;
 use App\Http\Controllers\AppVersionController;
 use App\Http\Controllers\AppWindowController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -29,6 +30,8 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
 
 Route::prefix('app')->name('api.app.')->group(function () {
     Route::get('/version', [AppVersionController::class, 'show'])->name('version.show');
+    Route::get('/startup', [AppStartupController::class, 'show'])->name('startup.show');
+    Route::put('/startup', [AppStartupController::class, 'update'])->name('startup.update');
     Route::get('/updates/status', [AppVersionController::class, 'updateStatus'])
         ->name('updates.status');
     Route::post('/updates/check', [AppVersionController::class, 'checkForUpdates'])
@@ -41,6 +44,8 @@ Route::prefix('app')->name('api.app.')->group(function () {
         ->name('window.minimize');
     Route::post('/window/maximize', [AppWindowController::class, 'maximize'])
         ->name('window.maximize');
+    Route::post('/window/restore', [AppWindowController::class, 'restore'])
+        ->name('window.restore');
     Route::post('/window/close', [AppWindowController::class, 'close'])
         ->name('window.close');
 });

@@ -1,4 +1,4 @@
-export type AppWindowAction = 'minimize' | 'maximize' | 'close';
+export type AppWindowAction = 'minimize' | 'maximize' | 'restore' | 'close';
 export type AppWindowControlStatus = 'handled' | 'unavailable';
 
 export type AppWindowControlResult = {

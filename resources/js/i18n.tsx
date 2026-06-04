@@ -17,6 +17,8 @@ const translations = {
         addEmployee: 'Add employee',
         anonymousAuthUnavailable:
             'Firebase is configured, but anonymous sign-in is unavailable. Enable Anonymous sign-in in Firebase Authentication, then reload the app.',
+        appVersion: 'Version {version}',
+        appVersionLoading: 'Version loading',
         authLoading: 'Preparing your workspace',
         authStateUnavailable:
             'Firebase authentication is temporarily unavailable. Reload the app or check the Firebase project settings.',
@@ -58,11 +60,20 @@ const translations = {
         loadEmployeesError: 'Unable to load employees.',
         loadingEmployees: 'Loading employees',
         nameRequired: 'Name is required.',
+        navDashboard: 'Dashboard',
+        navSettings: 'Settings',
         noIqamaDate: 'Not set',
         retry: 'Retry',
         save: 'Save',
         saveEmployeeError: 'Unable to save the employee.',
         saving: 'Saving',
+        settingsSubtitle: 'Manage desktop preferences for this app.',
+        settingsTitle: 'Settings',
+        startWithWindows: 'Start with Windows',
+        startWithWindowsDescription:
+            'Open Contract Tracker automatically when you sign in to Windows.',
+        startWithWindowsUnavailable:
+            'This setting is available in the packaged desktop app.',
         statusGreen: 'Healthy',
         statusRed: 'Urgent',
         statusYellow: 'Watch',
@@ -79,12 +90,15 @@ const translations = {
         windowClose: 'Close window',
         windowMaximize: 'Maximize window',
         windowMinimize: 'Minimize window',
+        windowRestore: 'Restore window',
         updateEmployee: 'Update employee',
     },
     ar: {
         addEmployee: 'إضافة موظف',
         anonymousAuthUnavailable:
             'تم إعداد Firebase، لكن تسجيل الدخول المجهول غير متاح. فعّل تسجيل الدخول المجهول في Firebase Authentication ثم أعد تحميل التطبيق.',
+        appVersion: 'Version {version}',
+        appVersionLoading: 'Version loading',
         authLoading: 'جار تجهيز مساحة العمل',
         authStateUnavailable:
             'مصادقة Firebase غير متاحة مؤقتا. أعد تحميل التطبيق أو تحقق من إعدادات مشروع Firebase.',
@@ -123,11 +137,20 @@ const translations = {
         loadEmployeesError: 'تعذر تحميل الموظفين.',
         loadingEmployees: 'جار تحميل الموظفين',
         nameRequired: 'الاسم مطلوب.',
+        navDashboard: 'Dashboard',
+        navSettings: 'Settings',
         noIqamaDate: 'غير محدد',
         retry: 'إعادة المحاولة',
         save: 'حفظ',
         saveEmployeeError: 'تعذر حفظ الموظف.',
         saving: 'جار الحفظ',
+        settingsSubtitle: 'Manage desktop preferences for this app.',
+        settingsTitle: 'Settings',
+        startWithWindows: 'Start with Windows',
+        startWithWindowsDescription:
+            'Open Contract Tracker automatically when you sign in to Windows.',
+        startWithWindowsUnavailable:
+            'This setting is available in the packaged desktop app.',
         statusGreen: 'مطمئن',
         statusRed: 'عاجل',
         statusYellow: 'متابعة',
@@ -144,6 +167,7 @@ const translations = {
         windowClose: 'إغلاق النافذة',
         windowMaximize: 'تكبير النافذة',
         windowMinimize: 'تصغير النافذة',
+        windowRestore: 'Restore window',
         updateEmployee: 'تحديث الموظف',
     },
 } as const;
@@ -156,7 +180,7 @@ type I18nContextValue = {
     setLanguage: (language: Language) => void;
     t: (
         key: TranslationKey,
-        replacements?: Partial<Record<'count', string | number>>,
+        replacements?: Partial<Record<'count' | 'version', string | number>>,
     ) => string;
 };
 

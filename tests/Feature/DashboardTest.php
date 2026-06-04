@@ -49,4 +49,23 @@ class DashboardTest extends TestCase
             ->assertSee('window.__contractTrackerConfig', false)
             ->assertSee('"projectId":"test-project"', false);
     }
+
+    public function test_dashboard_shell_omits_empty_runtime_firebase_web_config_values()
+    {
+        config()->set('firebase.web', [
+            'apiKey' => '',
+            'authDomain' => null,
+            'projectId' => '   ',
+            'storageBucket' => '',
+            'messagingSenderId' => null,
+            'appId' => '',
+        ]);
+
+        $response = $this->get(route('dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('window.__contractTrackerConfig', false)
+            ->assertSee('"firebase":[]', false);
+    }
 }

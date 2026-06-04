@@ -13,7 +13,7 @@ class SpaController extends Controller
         $appearanceJson = json_encode($appearance, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $darkClass = $appearance === 'dark' ? ' class="dark"' : '';
         $frontendConfigJson = json_encode([
-            'firebase' => config('firebase.web'),
+            'firebase' => $this->runtimeFirebaseConfig(),
             'native' => [
                 'running' => (bool) config('nativephp-internal.running'),
             ],
@@ -74,5 +74,16 @@ class SpaController extends Controller
         HTML;
 
         return response($html)->header('Content-Type', 'text/html');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function runtimeFirebaseConfig(): array
+    {
+        return collect(config('firebase.web'))
+            ->filter(fn ($value) => is_string($value) && trim($value) !== '')
+            ->map(fn (string $value) => trim($value))
+            ->all();
     }
 }

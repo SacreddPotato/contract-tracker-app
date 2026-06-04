@@ -25,10 +25,10 @@ export function resolveFirebaseConfig({
     runtimeConfig?: RawFirebaseWebConfig;
     viteConfig?: RawFirebaseWebConfig;
 } = {}): FirebaseWebConfig {
-    return normalizeFirebaseConfig({
-        ...viteConfig,
-        ...runtimeConfig,
-    });
+    return {
+        ...normalizeFirebaseConfig(viteConfig),
+        ...withoutEmptyValues(normalizeFirebaseConfig(runtimeConfig)),
+    };
 }
 
 export function hasRequiredFirebaseConfig(config: FirebaseWebConfig): boolean {
@@ -58,4 +58,10 @@ function normalizeConfigValue(
     const trimmedValue = value.trim();
 
     return trimmedValue.length > 0 ? trimmedValue : undefined;
+}
+
+function withoutEmptyValues(config: FirebaseWebConfig): FirebaseWebConfig {
+    return Object.fromEntries(
+        Object.entries(config).filter(([, value]) => value !== undefined),
+    ) as FirebaseWebConfig;
 }

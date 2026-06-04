@@ -21,6 +21,11 @@ class AppWindowController extends Controller
         return $this->responseFor('maximize');
     }
 
+    public function restore(): JsonResponse
+    {
+        return $this->responseFor('restore');
+    }
+
     public function close(): JsonResponse
     {
         return $this->responseFor('close');

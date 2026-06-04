@@ -23,6 +23,12 @@ class AppWindowTest extends TestCase
                 'status' => 'unavailable',
             ]);
 
+        $this->postJson('/api/app/window/restore')
+            ->assertOk()
+            ->assertJson([
+                'status' => 'unavailable',
+            ]);
+
         $this->postJson('/api/app/window/close')
             ->assertOk()
             ->assertJson([

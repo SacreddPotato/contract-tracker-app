@@ -30,6 +30,9 @@ test('window control service posts the requested native window action', async ()
     assert.deepEqual(await controlAppWindow('maximize', { fetcher }), {
         status: 'handled',
     });
+    assert.deepEqual(await controlAppWindow('restore', { fetcher }), {
+        status: 'handled',
+    });
     assert.deepEqual(await controlAppWindow('close', { fetcher }), {
         status: 'handled',
     });
@@ -39,6 +42,7 @@ test('window control service posts the requested native window action', async ()
         [
             ['/api/app/window/minimize', 'POST'],
             ['/api/app/window/maximize', 'POST'],
+            ['/api/app/window/restore', 'POST'],
             ['/api/app/window/close', 'POST'],
         ],
     );
