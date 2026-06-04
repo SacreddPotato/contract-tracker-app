@@ -1,0 +1,86 @@
+name: release windows executable
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      NATIVEPHP_APP_VERSION: ${{ github.ref_name }}
+      NATIVEPHP_UPDATER_ENABLED: true
+      NATIVEPHP_UPDATER_PROVIDER: github
+      GITHUB_CHANNEL: latest
+      GITHUB_V_PREFIXED_TAG_NAME: true
+      GITHUB_OWNER: ${{ github.repository_owner }}
+      GITHUB_REPO: ${{ github.event.repository.name }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+      VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
+        with:
+          php-version: '8.4'
+          extensions: zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare production environment
+        shell: pwsh
+        run: |
+          Copy-Item .env.production.example .env
+          php artisan key:generate --ansi
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Publish NativePHP Windows app
+        run: php artisan native:publish win --no-interaction
+
+      - name: Create draft release
+        shell: pwsh
+        run: |
+          gh release create "${env:GITHUB_REF_NAME}" --draft --title "${env:GITHUB_REF_NAME}" --notes "Automated NativePHP Windows build for ${env:GITHUB_REF_NAME}."
+
+      - name: Upload release assets
+        shell: pwsh
+        run: |
+          $assets = Get-ChildItem -Path dist -Recurse -File
+
+          if (-not $assets) {
+            throw "No NativePHP release assets were found under dist."
+          }
+
+          foreach ($asset in $assets) {
+            gh release upload "${env:GITHUB_REF_NAME}" $asset.FullName --clobber
+          }
+
+      - name: Publish release
+        shell: pwsh
+        run: gh release edit "${env:GITHUB_REF_NAME}" --draft=false

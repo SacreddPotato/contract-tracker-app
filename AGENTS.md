@@ -10,6 +10,8 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Do not add new Inertia pages, Blade-driven product screens, or server-rendered frontend features.
 - Existing Inertia/server-rendered starter code is legacy starter structure and should be refactored away during future product work instead of extended.
 - Keep backend and frontend concerns separate. Do not put frontend presentation logic in Laravel controllers, and do not put backend business rules in React components.
+- Product data is backed by Firebase Auth plus Firestore client access. Do not reintroduce SQLite or another SQL database for product/domain data unless the user explicitly approves that architectural change.
+- Never package Firebase Admin credentials, service-account JSON, private keys, GitHub tokens, or other privileged secrets into the desktop app.
 
 ## Laravel MVC Boundaries
 
@@ -42,11 +44,16 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Do not hide domain logic in route closures. API routes should point to controllers.
 - Keep route files focused on route registration and middleware grouping.
 
-## Database, Models, Factories, And Seeders
+## Firestore, Database, Models, Factories, And Seeders
 
-- Every new model must include a relevant factory.
-- Every new migration that introduces or changes domain data must be paired with factory and seeder updates when seed data is useful for development or verification.
-- After creating or changing models, migrations, factories, or seeders, verify the database by running migrations and seeders in a local or testing-safe environment.
+- Firestore Security Rules are the authoritative data-access boundary for client-owned product data.
+- React may call Firestore only through dedicated frontend data services, hooks, or utilities. Do not scatter Firestore calls directly through UI components.
+- Every new Firestore collection or document shape must include matching security rules, emulator fixtures or setup data, and Firestore rules tests.
+- Firestore rules must enforce user ownership and must reject cross-user reads, writes, ownership-field changes, and unauthenticated access unless a route is intentionally public.
+- Do not invent Laravel migrations for Firestore-backed product data. Firestore structure changes belong in rules, indexes, typed frontend services, and emulator tests.
+- If SQL is explicitly reintroduced for a local-only or backend-only concern, every new model must include a relevant factory.
+- If SQL is explicitly reintroduced, every new migration that introduces or changes domain data must be paired with factory and seeder updates when seed data is useful for development or verification.
+- After creating or changing SQL models, migrations, factories, or seeders, verify the database by running migrations and seeders in a local or testing-safe environment.
 - Prefer `php artisan migrate:fresh --seed` only when it is safe to reset the local database. Otherwise use a non-destructive migration command and run the relevant seeder.
 - Seeders must create realistic, minimal development data without relying on production data.
 - Factories must define valid default data and useful states for important model variants.
@@ -67,14 +74,34 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - React code belongs under `resources/js`.
 - Keep UI components focused on rendering and interaction.
 - Put API calls, data mapping, and shared client behavior in clearly named hooks, services, or utilities.
+- Put Firebase initialization in a single shared bootstrap module and reuse it through frontend data services.
 - Do not duplicate backend validation as business truth. Client validation may improve UX, but Laravel remains authoritative.
 - Reuse existing UI primitives and project styling conventions before introducing new component patterns.
 - Keep generated route/action helpers only if they remain compatible with the API-first direction.
+
+## NativePHP Desktop, Releases, And Updates
+
+- Windows is the first supported packaged desktop target.
+- NativePHP/GitHub Releases are the source of truth for desktop updates. Do not add a Firestore "latest version" document as the primary updater source unless the user explicitly changes the release model.
+- The app version must come from the release tag during packaged builds through `NATIVEPHP_APP_VERSION`.
+- Local update APIs may expose installed version metadata and trigger NativePHP update checks, but they must not manually download replacement executables.
+- The updater must stay disabled for local development by default.
+- Treat `ext-zip` as a required PHP extension for NativePHP build environments.
+
+## GitHub Actions, Tagging, And Releases
+
+- CI QA must pass before any automated release tag is created.
+- QA workflows must be check-only. Do not run mutating formatters or auto-commit style fixes in CI.
+- On successful pushes to `main`, the repository creates one auto-patch tag for the successful head commit using `v0.1.<run_number>`.
+- Tag workflows must not run for tag pushes or recursively create additional tags.
+- Every `v*` tag should trigger a Windows NativePHP release build and upload the executable artifacts to a GitHub Release.
+- Release workflows must use GitHub Actions secrets and environment variables. Do not commit release tokens or production secrets.
 
 ## Testing And Verification
 
 - Prefer Laravel feature tests for API behavior.
 - Prefer unit tests for service classes and isolated domain logic.
+- Prefer Firestore emulator tests for Firestore Security Rules and client data-access boundaries.
 - Add or update tests when changing validation, authorization, resources, services, models, or API behavior.
 - Run the narrowest meaningful checks during development, then run broader checks before handoff when relevant.
 - Relevant backend checks include:
@@ -85,6 +112,9 @@ These rules apply to all future AI-assisted work in this project. Follow them be
   - `npm run lint:check`
   - `npm run types:check`
   - `npm run build`
+- Relevant Firestore checks include:
+  - `npm run test:firestore-rules`
+- Relevant release checks include validating GitHub Actions YAML and confirming NativePHP build commands run in the target CI environment.
 - For documentation-only changes, automated tests are not required unless the documentation change is coupled to code changes.
 
 ## Code Quality
@@ -97,6 +127,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Use clear names that describe domain intent.
 - Do not introduce new packages unless the need is clear and the user agrees.
 - Never commit secrets, credentials, tokens, or environment-specific private values.
+- Keep `.env` and `.env.production` ignored. Commit only safe environment templates such as `.env.example` and `.env.production.example`.
 
 ## Future Refactor Direction
 

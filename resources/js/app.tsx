@@ -74,11 +74,13 @@ function currentRoute(): RouteDefinition {
         };
     }
 
-    return routes[window.location.pathname] ?? {
-        title: 'Not found',
-        eyebrow: 'React route',
-        body: 'This route is handled by the React app shell.',
-    };
+    return (
+        routes[window.location.pathname] ?? {
+            title: 'Not found',
+            eyebrow: 'React route',
+            body: 'This route is handled by the React app shell.',
+        }
+    );
 }
 
 function App() {
@@ -102,13 +104,22 @@ function App() {
                         {route.body}
                     </p>
                     <nav className="mt-8 flex flex-wrap gap-3 text-sm">
-                        <a className="rounded-md border px-3 py-2 hover:bg-accent" href="/dashboard">
+                        <a
+                            className="rounded-md border px-3 py-2 hover:bg-accent"
+                            href="/dashboard"
+                        >
                             Dashboard
                         </a>
-                        <a className="rounded-md border px-3 py-2 hover:bg-accent" href="/settings/profile">
+                        <a
+                            className="rounded-md border px-3 py-2 hover:bg-accent"
+                            href="/settings/profile"
+                        >
                             Profile
                         </a>
-                        <a className="rounded-md border px-3 py-2 hover:bg-accent" href="/settings/security">
+                        <a
+                            className="rounded-md border px-3 py-2 hover:bg-accent"
+                            href="/settings/security"
+                        >
                             Security
                         </a>
                     </nav>

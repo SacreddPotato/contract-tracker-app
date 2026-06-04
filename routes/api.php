@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppVersionController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Resources\UserResource;
@@ -23,4 +24,11 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
             ->middleware('throttle:6,1')
             ->name('security.password.update');
     });
+});
+
+Route::prefix('app')->name('api.app.')->group(function () {
+    Route::get('/version', [AppVersionController::class, 'show'])->name('version.show');
+    Route::post('/updates/check', [AppVersionController::class, 'checkForUpdates'])
+        ->middleware('throttle:6,1')
+        ->name('updates.check');
 });

@@ -12,6 +12,11 @@
 .env
 .env.backup
 .env.production
+*.firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
+firestore-debug.log
+ui-debug.log
+.firebase/
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

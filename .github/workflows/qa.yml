@@ -1,0 +1,82 @@
+name: qa
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+      - master
+      - workos
+    tags-ignore:
+      - '**'
+  pull_request:
+    branches:
+      - develop
+      - main
+      - master
+      - workos
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
+        with:
+          php-version: '8.4'
+          extensions: zip
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Pint check
+        run: composer lint:check
+
+      - name: Prettier check
+        run: npm run format:check
+
+      - name: ESLint check
+        run: npm run lint:check
+
+      - name: TypeScript check
+        run: npm run types:check
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Firestore rules tests
+        run: npm run test:firestore-rules
+
+      - name: PHP tests
+        run: php artisan test

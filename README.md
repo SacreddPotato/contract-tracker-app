@@ -1,27 +1,77 @@
-# Laravel + React Starter Kit
+# Contract Tracker
 
-## Introduction
+Contract Tracker is a Laravel API + React frontend application. Product data is intended to use Firebase Auth plus Firestore client access, with Firestore Security Rules as the access-control boundary.
 
-Our React starter kit provides a robust, modern starting point for building Laravel applications with a React frontend using [Inertia](https://inertiajs.com).
+## Local Development
 
-Inertia allows you to build modern, single-page React applications using classic server-side routing and controllers. This lets you enjoy the frontend power of React combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+Install dependencies:
 
-This React starter kit utilizes React 19, TypeScript, Tailwind, and the [shadcn/ui](https://ui.shadcn.com) and [radix-ui](https://www.radix-ui.com) component libraries.
+```powershell
+composer install --ignore-platform-req=ext-zip
+npm install
+```
 
-## Official Documentation
+Prepare `.env`:
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+```powershell
+copy .env.example .env
+php artisan key:generate
+```
 
-## Contributing
+Fill these Firebase web config values from Firebase Console > Project settings > Your apps > Web app config:
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
 
-All contributions to the Starter Kits from now on should be made through [Maestro](https://github.com/laravel/maestro).
+Check the local setup:
 
-## Code of Conduct
+```powershell
+npm run check:dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Run the app:
 
-## License
+```powershell
+composer dev
+```
 
-The Laravel + React starter kit is open-sourced software licensed under the MIT license.
+## Verification
+
+Use these commands before handoff:
+
+```powershell
+composer test
+npm run format:check
+npm run lint:check
+npm run types:check
+npm run build
+npm run test:firestore-rules
+```
+
+## Firebase
+
+Firestore configuration lives in:
+
+- `firebase.json`
+- `firestore.rules`
+- `firestore.indexes.json`
+- `tests/firestore`
+
+Deploy Firestore rules and indexes after logging in with Firebase CLI:
+
+```powershell
+firebase login
+firebase deploy --only firestore
+```
+
+The Firebase web config values are public client config, not Firebase Admin secrets. Do not commit Firebase Admin service-account JSON files.
+
+## NativePHP Releases
+
+NativePHP is configured for Windows desktop builds through GitHub Actions. Local NativePHP publishing requires PHP `ext-zip`; normal app development can continue without it.
