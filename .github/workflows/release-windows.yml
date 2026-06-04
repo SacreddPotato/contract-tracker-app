@@ -88,11 +88,14 @@ jobs:
             throw "Missing required Supabase release variables: $($missing -join ', ')"
           }
 
+          $envPath = ".env"
+          $envContent = Get-Content $envPath -Raw
           foreach ($name in $supabaseVariables) {
             $value = [Environment]::GetEnvironmentVariable($name)
             $escapedValue = $value -replace '"', '\"'
-            "$name=`"$escapedValue`"" | Out-File -FilePath .env -Encoding utf8 -Append
+            $envContent = $envContent -replace "(?m)^$name=.*", "$name=`"$escapedValue`""
           }
+          $envContent | Set-Content $envPath -Encoding utf8 -NoNewline
 
       - name: Build frontend
         run: npm run build
