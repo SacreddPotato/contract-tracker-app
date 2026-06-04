@@ -13,7 +13,6 @@ jobs:
   windows:
     runs-on: windows-latest
     env:
-      NATIVEPHP_APP_VERSION: ${{ github.ref_name }}
       NATIVEPHP_UPDATER_ENABLED: true
       NATIVEPHP_UPDATER_PROVIDER: github
       GITHUB_CHANNEL: latest
@@ -33,6 +32,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Derive app version from tag
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}" -replace '^v', ''
+
+          if (-not ($version -match '^\d+\.\d+\.\d+([-.+][0-9A-Za-z.-]+)?$')) {
+            throw "Tag ${env:GITHUB_REF_NAME} does not resolve to a valid NativePHP app version."
+          }
+
+          "NATIVEPHP_APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "NativePHP app version: $version"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
