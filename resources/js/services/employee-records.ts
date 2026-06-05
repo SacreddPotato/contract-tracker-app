@@ -1,4 +1,4 @@
-export type ContractStatus = 'green' | 'yellow' | 'red' | 'orange';
+export type ContractStatus = 'green' | 'yellow' | 'red';
 
 export type EmployeeFormValues = {
     name: string;
@@ -63,19 +63,14 @@ export function contractStatusForDate(
 ): ContractStatus {
     const endDate = parseDateOnly(contractEndDate);
     const oneMonthAway = addCalendarMonths(startOfLocalDay(today), 1);
-    const twoMonthsAway = addCalendarMonths(startOfLocalDay(today), 2);
     const threeMonthsAway = addCalendarMonths(startOfLocalDay(today), 3);
 
     if (endDate < oneMonthAway) {
         return 'red';
     }
 
-    if (endDate < twoMonthsAway) {
-        return 'yellow';
-    }
-
     if (endDate <= threeMonthsAway) {
-        return 'orange';
+        return 'yellow';
     }
 
     return 'green';
