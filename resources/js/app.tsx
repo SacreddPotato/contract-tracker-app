@@ -239,10 +239,10 @@ function SettingsView() {
                         >
                             <span
                                 className={cn(
-                                    'absolute top-0.75 size-5 rounded-full bg-background shadow-sm transition-transform',
+                                    'pointer-events-none absolute top-1 left-1 size-5 rounded-full bg-background shadow-sm transition-transform',
                                     startup.preference.enabled
-                                        ? 'translate-x-5.5'
-                                        : 'translate-x-0.75',
+                                        ? 'translate-x-5'
+                                        : 'translate-x-0',
                                 )}
                             />
                         </button>

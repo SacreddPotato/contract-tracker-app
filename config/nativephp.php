@@ -3,7 +3,7 @@
 use App\Providers\NativeAppServiceProvider;
 
 return [
-    'version' => env('NATIVEPHP_APP_VERSION', '0.0.0'),
+    'version' => env('NATIVEPHP_APP_VERSION', env('APP_VERSION', '0.0.0-dev')),
     'app_id' => env('NATIVEPHP_APP_ID', 'com.contracttracker.app'),
     'deeplink_scheme' => env('NATIVEPHP_DEEPLINK_SCHEME'),
     'author' => env('NATIVEPHP_APP_AUTHOR'),

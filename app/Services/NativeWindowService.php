@@ -20,7 +20,7 @@ class NativeWindowService
 
         try {
             match ($action) {
-                'minimize' => $window::minimize('main'),
+                'minimize' => $this->minimize($window),
                 'maximize' => $window::maximize('main'),
                 'restore' => $this->restore($window),
                 'close' => $window::close('main'),
@@ -41,5 +41,11 @@ class NativeWindowService
     {
         $window::resize(1200, 800, 'main');
         $window::position(80, 80, false, 'main');
+    }
+
+    private function minimize(string $window): void
+    {
+        $this->restore($window);
+        $window::minimize('main');
     }
 }

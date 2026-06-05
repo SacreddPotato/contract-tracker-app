@@ -18,11 +18,12 @@ const translations = {
         anonymousAuthUnavailable:
             'Supabase is configured, but anonymous sign-in is unavailable. Enable Anonymous Sign-Ins in Supabase Auth, then reload the app.',
         appVersion: 'Version {version}',
-        appVersionLoading: 'Version loading',
+        appVersionLoading: 'Loading version',
         authLoading: 'Preparing your workspace',
         authStateUnavailable:
             'Supabase authentication is temporarily unavailable. Reload the app or check the Supabase project settings.',
         cancel: 'Cancel',
+        closeDialog: 'Close',
         confirmDelete: 'Delete',
         contractDates: 'Contract dates',
         contractDaysExpired: '{count} days overdue',
@@ -38,6 +39,9 @@ const translations = {
             'Track contract and iqama dates for the current workspace.',
         dashboardTitle: 'Employee contracts',
         deleteEmployee: 'Delete employee',
+        deleteEmployeeConfirmationDescription:
+            'This will permanently remove {employee} from this workspace.',
+        deleteEmployeeConfirmationTitle: 'Delete employee?',
         deleteEmployeeDescription:
             'This removes the employee from this workspace.',
         edit: 'Edit',
@@ -57,6 +61,8 @@ const translations = {
         iqamaStartDate: 'Iqama start date',
         iqamaStartDateInvalid: 'Use a valid iqama start date.',
         language: 'Language',
+        languageArabic: 'Arabic',
+        languageEnglish: 'English',
         loadEmployeesError: 'Unable to load employees.',
         loadingEmployees: 'Loading employees',
         nameRequired: 'Name is required.',
@@ -82,6 +88,7 @@ const translations = {
         tableEmployee: 'Employee',
         tableIqama: 'Iqama',
         tableStatus: 'Status',
+        updateEmployee: 'Update employee',
         updateInstalling: 'Installing',
         updateReadyDescription:
             'Restart the app to install the downloaded update.',
@@ -91,32 +98,35 @@ const translations = {
         windowMaximize: 'Maximize window',
         windowMinimize: 'Minimize window',
         windowRestore: 'Restore window',
-        updateEmployee: 'Update employee',
     },
     ar: {
         addEmployee: 'إضافة موظف',
         anonymousAuthUnavailable:
             'تم إعداد Supabase، لكن تسجيل الدخول المجهول غير متاح. فعّل تسجيل الدخول المجهول في Supabase Auth ثم أعد تحميل التطبيق.',
-        appVersion: 'Version {version}',
-        appVersionLoading: 'Version loading',
+        appVersion: 'الإصدار {version}',
+        appVersionLoading: 'جار تحميل الإصدار',
         authLoading: 'جار تجهيز مساحة العمل',
         authStateUnavailable:
             'مصادقة Supabase غير متاحة مؤقتا. أعد تحميل التطبيق أو تحقق من إعدادات مشروع Supabase.',
         cancel: 'إلغاء',
+        closeDialog: 'إغلاق',
         confirmDelete: 'حذف',
         contractDates: 'تواريخ العقد',
         contractDaysExpired: 'متأخر {count} يوم',
         contractDaysLeft: 'متبقي {count} يوم',
         contractEndsToday: 'ينتهي اليوم',
         contractEndDate: 'تاريخ نهاية العقد',
-        contractEndDateInvalid: 'استخدم تاريخ نهاية عقد صحيح.',
+        contractEndDateInvalid: 'استخدم تاريخ نهاية عقد صحيحا.',
         contractEndDateRequired: 'تاريخ نهاية العقد مطلوب.',
         contractStartDate: 'تاريخ بداية العقد',
-        contractStartDateInvalid: 'استخدم تاريخ بداية عقد صحيح.',
+        contractStartDateInvalid: 'استخدم تاريخ بداية عقد صحيحا.',
         contractStartDateRequired: 'تاريخ بداية العقد مطلوب.',
         dashboardSubtitle: 'تابع تواريخ العقود والإقامات لمساحة العمل الحالية.',
         dashboardTitle: 'عقود الموظفين',
         deleteEmployee: 'حذف الموظف',
+        deleteEmployeeConfirmationDescription:
+            'سيتم حذف {employee} نهائيا من مساحة العمل هذه.',
+        deleteEmployeeConfirmationTitle: 'حذف الموظف؟',
         deleteEmployeeDescription: 'سيتم حذف الموظف من مساحة العمل الحالية.',
         edit: 'تعديل',
         editEmployee: 'تعديل الموظف',
@@ -129,28 +139,30 @@ const translations = {
             'الحقول المطلوبة هي الاسم وتاريخ بداية العقد وتاريخ نهاية العقد.',
         iqamaDates: 'تواريخ الإقامة',
         iqamaEndDate: 'تاريخ نهاية الإقامة',
-        iqamaEndDateInvalid: 'استخدم تاريخ نهاية إقامة صحيح.',
+        iqamaEndDateInvalid: 'استخدم تاريخ نهاية إقامة صحيحا.',
         iqamaOptional: 'اختياري',
         iqamaStartDate: 'تاريخ بداية الإقامة',
-        iqamaStartDateInvalid: 'استخدم تاريخ بداية إقامة صحيح.',
+        iqamaStartDateInvalid: 'استخدم تاريخ بداية إقامة صحيحا.',
         language: 'اللغة',
+        languageArabic: 'العربية',
+        languageEnglish: 'English',
         loadEmployeesError: 'تعذر تحميل الموظفين.',
         loadingEmployees: 'جار تحميل الموظفين',
         nameRequired: 'الاسم مطلوب.',
-        navDashboard: 'Dashboard',
-        navSettings: 'Settings',
+        navDashboard: 'لوحة التحكم',
+        navSettings: 'الإعدادات',
         noIqamaDate: 'غير محدد',
         retry: 'إعادة المحاولة',
         save: 'حفظ',
         saveEmployeeError: 'تعذر حفظ الموظف.',
         saving: 'جار الحفظ',
-        settingsSubtitle: 'Manage desktop preferences for this app.',
-        settingsTitle: 'Settings',
-        startWithWindows: 'Start with Windows',
+        settingsSubtitle: 'إدارة تفضيلات سطح المكتب لهذا التطبيق.',
+        settingsTitle: 'الإعدادات',
+        startWithWindows: 'بدء التشغيل مع Windows',
         startWithWindowsDescription:
-            'Open Contract Tracker automatically when you sign in to Windows.',
+            'افتح Contract Tracker تلقائيا عند تسجيل الدخول إلى Windows.',
         startWithWindowsUnavailable:
-            'This setting is available in the packaged desktop app.',
+            'هذا الإعداد متاح في تطبيق سطح المكتب المثبت.',
         statusGreen: 'مطمئن',
         statusRed: 'عاجل',
         statusYellow: 'متابعة',
@@ -159,6 +171,7 @@ const translations = {
         tableEmployee: 'الموظف',
         tableIqama: 'الإقامة',
         tableStatus: 'الحالة',
+        updateEmployee: 'تحديث الموظف',
         updateInstalling: 'جار التثبيت',
         updateReadyDescription:
             'أعد تشغيل التطبيق لتثبيت التحديث الذي تم تنزيله.',
@@ -167,8 +180,7 @@ const translations = {
         windowClose: 'إغلاق النافذة',
         windowMaximize: 'تكبير النافذة',
         windowMinimize: 'تصغير النافذة',
-        windowRestore: 'Restore window',
-        updateEmployee: 'تحديث الموظف',
+        windowRestore: 'استعادة النافذة',
     },
 } as const;
 
@@ -180,7 +192,9 @@ type I18nContextValue = {
     setLanguage: (language: Language) => void;
     t: (
         key: TranslationKey,
-        replacements?: Partial<Record<'count' | 'version', string | number>>,
+        replacements?: Partial<
+            Record<'count' | 'employee' | 'version', string | number>
+        >,
     ) => string;
 };
 

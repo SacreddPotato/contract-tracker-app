@@ -79,6 +79,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Put Supabase initialization in a single shared bootstrap module and reuse it through frontend auth/data services.
 - Do not duplicate backend validation as business truth. Client validation may improve UX, but Laravel remains authoritative.
 - Reuse existing UI primitives and project styling conventions before introducing new component patterns.
+- Every new or changed user-facing UI string must be added to the translation dictionary for all supported languages. Do not hardcode English or Arabic strings in components except stable product names, technical tokens, or values intentionally shown verbatim.
 - Keep generated route/action helpers only if they remain compatible with the API-first direction.
 
 ## NativePHP Desktop, Releases, And Updates

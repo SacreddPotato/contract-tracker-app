@@ -54,6 +54,7 @@ const statusClasses: Record<ContractStatus, string> = {
     green: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300',
     red: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
     yellow: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
+    orange: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300',
 };
 
 export function EmployeeDashboard({
@@ -68,6 +69,10 @@ export function EmployeeDashboard({
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(
         null,
     );
+    const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(
+        null,
+    );
+    const [isDeletingEmployee, setIsDeletingEmployee] = useState(false);
 
     const employeeCount = employeesState.employees.length;
 
@@ -89,12 +94,19 @@ export function EmployeeDashboard({
         }
     }
 
-    async function removeEmployee(employee: Employee) {
-        if (!window.confirm(t('deleteEmployeeDescription'))) {
+    async function confirmRemoveEmployee() {
+        if (!deletingEmployee) {
             return;
         }
 
-        await employeesState.deleteEmployee(employee.id);
+        setIsDeletingEmployee(true);
+
+        try {
+            await employeesState.deleteEmployee(deletingEmployee.id);
+            setDeletingEmployee(null);
+        } finally {
+            setIsDeletingEmployee(false);
+        }
     }
 
     return (
@@ -131,7 +143,9 @@ export function EmployeeDashboard({
                             variant="outline"
                         >
                             <Languages className="size-4" />
-                            {language === 'en' ? 'العربية' : 'English'}
+                            {language === 'en'
+                                ? t('languageArabic')
+                                : t('languageEnglish')}
                         </Button>
                         <Button
                             disabled={!auth.user}
@@ -192,7 +206,7 @@ export function EmployeeDashboard({
                             direction={direction}
                             employees={employeesState.employees}
                             onDelete={(employee) => {
-                                void removeEmployee(employee);
+                                setDeletingEmployee(employee);
                             }}
                             onEdit={openEditDialog}
                         />
@@ -215,6 +229,18 @@ export function EmployeeDashboard({
                     open={formOpen}
                 />
             )}
+            <DeleteEmployeeDialog
+                employee={deletingEmployee}
+                isDeleting={isDeletingEmployee}
+                onConfirm={() => {
+                    void confirmRemoveEmployee();
+                }}
+                onOpenChange={(open) => {
+                    if (!open && !isDeletingEmployee) {
+                        setDeletingEmployee(null);
+                    }
+                }}
+            />
         </main>
     );
 }
@@ -519,7 +545,7 @@ function EmployeeFormDialog({
 
     return (
         <Dialog onOpenChange={onOpenChange} open={open}>
-            <DialogContent>
+            <DialogContent closeLabel={t('closeDialog')}>
                 <DialogHeader>
                     <DialogTitle>
                         {employee ? t('editEmployee') : t('addEmployee')}
@@ -629,6 +655,57 @@ function EmployeeFormDialog({
                         </Button>
                     </DialogFooter>
                 </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function DeleteEmployeeDialog({
+    employee,
+    isDeleting,
+    onConfirm,
+    onOpenChange,
+}: {
+    employee: Employee | null;
+    isDeleting: boolean;
+    onConfirm: () => void;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const { t } = useI18n();
+
+    return (
+        <Dialog onOpenChange={onOpenChange} open={Boolean(employee)}>
+            <DialogContent closeLabel={t('closeDialog')}>
+                <DialogHeader>
+                    <DialogTitle>
+                        {t('deleteEmployeeConfirmationTitle')}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {t('deleteEmployeeConfirmationDescription', {
+                            employee: employee?.name ?? '',
+                        })}
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button
+                        disabled={isDeleting}
+                        onClick={() => {
+                            onOpenChange(false);
+                        }}
+                        type="button"
+                        variant="outline"
+                    >
+                        {t('cancel')}
+                    </Button>
+                    <Button
+                        disabled={isDeleting}
+                        onClick={onConfirm}
+                        type="button"
+                        variant="destructive"
+                    >
+                        {isDeleting ? t('saving') : t('confirmDelete')}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

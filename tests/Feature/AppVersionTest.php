@@ -23,6 +23,21 @@ class AppVersionTest extends TestCase
             ]);
     }
 
+    public function test_production_environment_template_does_not_pin_release_version_to_zero(): void
+    {
+        $template = file_get_contents(base_path('.env.production.example'));
+
+        $this->assertIsString($template);
+        $this->assertDoesNotMatchRegularExpression(
+            '/^NATIVEPHP_APP_VERSION=0\.0\.0$/m',
+            $template
+        );
+        $this->assertStringContainsString(
+            'NATIVEPHP_APP_VERSION=0.0.0-dev',
+            $template
+        );
+    }
+
     public function test_it_reports_updates_as_disabled_when_the_updater_is_off(): void
     {
         Config::set('release.updater.enabled', false);

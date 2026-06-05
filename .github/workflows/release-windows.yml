@@ -90,6 +90,8 @@ jobs:
 
           $envPath = ".env"
           $envContent = Get-Content $envPath -Raw
+          $envContent = $envContent -replace "(?m)^NATIVEPHP_APP_VERSION=.*", "NATIVEPHP_APP_VERSION=`"${env:NATIVEPHP_APP_VERSION}`""
+
           foreach ($name in $supabaseVariables) {
             $value = [Environment]::GetEnvironmentVariable($name)
             $escapedValue = $value -replace '"', '\"'
