@@ -50,17 +50,42 @@ npm run lint:check
 npm run types:check
 npm run build
 npm run test:frontend-api
+npm run test:frontend-migrations
 npm run test:frontend-schema
 npm run test:frontend-supabase
 ```
 
 ## Supabase
 
-Supabase setup SQL lives in:
+Supabase schema changes are migration-first. Do not edit `supabase/schema.sql` manually. Create a migration, apply it, then regenerate the schema snapshot from the database.
 
-- `supabase/schema.sql`
+Link the Supabase CLI to the remote project from `SUPABASE_URL`:
 
-Apply it through the Supabase SQL Editor, or with a temporary local/admin Postgres connection that is never packaged into the desktop app.
+```powershell
+npm run supabase:link
+```
+
+If the CLI is not logged in, run `npx supabase login` or set `SUPABASE_ACCESS_TOKEN` locally. If your Supabase URL is not available, set `SUPABASE_PROJECT_REF` locally. If the CLI asks for the database password, set `SUPABASE_DB_PASSWORD` locally for that command. Do not commit any secret-bearing value.
+
+Create a migration:
+
+```powershell
+npm run supabase:migration:new -- add_employee_contact_fields
+```
+
+Apply pending migrations to the linked remote project:
+
+```powershell
+npm run supabase:migrate
+```
+
+Regenerate the reviewed schema snapshot from the linked remote database:
+
+```powershell
+npm run supabase:schema:dump
+```
+
+Run `npm run test:frontend-migrations` and `npm run test:frontend-schema` after changing migrations or schema output.
 
 The Supabase URL and publishable key are safe public app config. Do not commit or package `sb_secret_...`, legacy `service_role` keys, database passwords, or service-account credentials.
 

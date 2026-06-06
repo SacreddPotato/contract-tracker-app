@@ -1,7 +1,10 @@
-export type ContractStatus = 'green' | 'yellow' | 'red';
+export type ContractStatus = 'green' | 'yellow' | 'orange' | 'red';
 
 export type EmployeeFormValues = {
     name: string;
+    phoneNumber: string;
+    nationality: string;
+    email: string;
     contractStartDate: string;
     contractEndDate: string;
     iqamaStartDate: string;
@@ -15,7 +18,8 @@ export type EmployeeValidationErrorKey =
     | 'contractStartDateInvalid'
     | 'contractEndDateInvalid'
     | 'iqamaStartDateInvalid'
-    | 'iqamaEndDateInvalid';
+    | 'iqamaEndDateInvalid'
+    | 'employeeEmailInvalid';
 
 export type EmployeeFormErrors = Partial<
     Record<keyof EmployeeFormValues, EmployeeValidationErrorKey>
@@ -35,6 +39,9 @@ export type EmployeeValidationResult =
 export type EmployeeDocument = {
     ownerId: string;
     name: string;
+    phoneNumber: string | null;
+    nationality: string | null;
+    email: string | null;
     contractStartDate: string;
     contractEndDate: string;
     iqamaStartDate: string | null;
@@ -48,28 +55,34 @@ export type Employee = EmployeeDocument & {
 };
 
 const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const emptyEmployeeFormValues: EmployeeFormValues = {
     contractEndDate: '',
     contractStartDate: '',
+    email: '',
     iqamaEndDate: '',
     iqamaStartDate: '',
     name: '',
+    nationality: '',
+    phoneNumber: '',
 };
 
 export function contractStatusForDate(
     contractEndDate: string,
     today = new Date(),
 ): ContractStatus {
-    const endDate = parseDateOnly(contractEndDate);
-    const oneMonthAway = addCalendarMonths(startOfLocalDay(today), 1);
-    const threeMonthsAway = addCalendarMonths(startOfLocalDay(today), 3);
+    const daysLeft = contractDaysLeft(contractEndDate, today);
 
-    if (endDate < oneMonthAway) {
+    if (daysLeft <= 30) {
         return 'red';
     }
 
-    if (endDate <= threeMonthsAway) {
+    if (daysLeft <= 60) {
+        return 'orange';
+    }
+
+    if (daysLeft <= 90) {
         return 'yellow';
     }
 
@@ -126,6 +139,10 @@ export function validateEmployeeForm(
         errors,
     );
 
+    if (normalizedValues.email && !emailPattern.test(normalizedValues.email)) {
+        errors.email = 'employeeEmailInvalid';
+    }
+
     if (Object.keys(errors).length > 0) {
         return {
             errors,
@@ -155,10 +172,13 @@ export function buildEmployeeDocument(
         contractEndDate: result.values.contractEndDate,
         contractStartDate: result.values.contractStartDate,
         createdAt: timestamp,
+        email: nullableString(result.values.email),
         iqamaEndDate: nullableDate(result.values.iqamaEndDate),
         iqamaStartDate: nullableDate(result.values.iqamaStartDate),
         name: result.values.name,
+        nationality: nullableString(result.values.nationality),
         ownerId,
+        phoneNumber: nullableString(result.values.phoneNumber),
         updatedAt: timestamp,
     };
 }
@@ -176,9 +196,12 @@ export function buildEmployeeUpdate(
     return {
         contractEndDate: result.values.contractEndDate,
         contractStartDate: result.values.contractStartDate,
+        email: nullableString(result.values.email),
         iqamaEndDate: nullableDate(result.values.iqamaEndDate),
         iqamaStartDate: nullableDate(result.values.iqamaStartDate),
         name: result.values.name,
+        nationality: nullableString(result.values.nationality),
+        phoneNumber: nullableString(result.values.phoneNumber),
         updatedAt: timestamp,
     };
 }
@@ -187,9 +210,12 @@ export function employeeToFormValues(employee: Employee): EmployeeFormValues {
     return {
         contractEndDate: employee.contractEndDate,
         contractStartDate: employee.contractStartDate,
+        email: employee.email ?? '',
         iqamaEndDate: employee.iqamaEndDate ?? '',
         iqamaStartDate: employee.iqamaStartDate ?? '',
         name: employee.name,
+        nationality: employee.nationality ?? '',
+        phoneNumber: employee.phoneNumber ?? '',
     };
 }
 
@@ -197,9 +223,12 @@ function normalizeEmployeeForm(values: EmployeeFormValues): EmployeeFormValues {
     return {
         contractEndDate: values.contractEndDate.trim(),
         contractStartDate: values.contractStartDate.trim(),
+        email: values.email.trim(),
         iqamaEndDate: values.iqamaEndDate.trim(),
         iqamaStartDate: values.iqamaStartDate.trim(),
         name: values.name.trim(),
+        nationality: values.nationality.trim(),
+        phoneNumber: values.phoneNumber.trim(),
     };
 }
 
@@ -246,6 +275,10 @@ function nullableDate(value: string): string | null {
     return value === '' ? null : value;
 }
 
+function nullableString(value: string): string | null {
+    return value === '' ? null : value;
+}
+
 function parseDateOnly(value: string): Date {
     const [year, month, day] = value.split('-').map(Number);
 
@@ -262,17 +295,4 @@ function formatDateOnly(value: Date): string {
 
 function startOfLocalDay(value: Date): Date {
     return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-}
-
-function addCalendarMonths(value: Date, months: number): Date {
-    const result = new Date(value);
-    const originalDay = result.getDate();
-
-    result.setMonth(result.getMonth() + months);
-
-    if (result.getDate() !== originalDay) {
-        result.setDate(0);
-    }
-
-    return result;
 }

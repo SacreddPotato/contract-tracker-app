@@ -11,8 +11,15 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
+        "supabase:link": "node scripts/link-supabase-project.mjs",
+        "supabase:migration:new": "supabase migration new",
+        "supabase:migrate": "supabase migration up --linked",
+        "supabase:schema:dump": "node scripts/dump-supabase-schema.mjs --linked",
+        "test:frontend-dev-ready": "node --test tests/frontend/dev-readiness.test.mjs",
         "test:frontend-api": "node --experimental-strip-types --test tests/frontend/employee-api.test.ts",
         "test:frontend-employees": "node --experimental-strip-types --test tests/frontend/employees.test.ts",
+        "test:frontend-migrations": "node --test tests/frontend/supabase-migrations.test.mjs",
+        "test:frontend-notifications": "node --experimental-strip-types --test tests/frontend/notification-api.test.ts",
         "test:frontend-schema": "node --test tests/frontend/supabase-schema.test.mjs",
         "test:frontend-supabase": "node --experimental-strip-types --test tests/frontend/supabase-config.test.ts",
         "test:frontend-updates": "node --experimental-strip-types --test tests/frontend/app-updates.test.ts",
@@ -33,6 +40,7 @@
         "eslint-plugin-react-hooks": "^7.0.0",
         "prettier": "^3.4.2",
         "prettier-plugin-tailwindcss": "^0.6.11",
+        "supabase": "^2.105.0",
         "typescript-eslint": "^8.23.0"
     },
     "dependencies": {

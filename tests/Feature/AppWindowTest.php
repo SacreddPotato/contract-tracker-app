@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Providers\NativeAppServiceProvider;
 use Illuminate\Support\Facades\Config;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class AppWindowTest extends TestCase
@@ -34,5 +36,42 @@ class AppWindowTest extends TestCase
             ->assertJson([
                 'status' => 'unavailable',
             ]);
+    }
+
+    public function test_native_window_startup_uses_screen_bounds_before_work_area(): void
+    {
+        $method = new ReflectionMethod(NativeAppServiceProvider::class, 'activeScreenBounds');
+        $bounds = $method->invoke(new NativeAppServiceProvider, NativeAppServiceProviderScreenFake::class);
+
+        $this->assertSame([
+            'height' => 1080,
+            'width' => 1920,
+            'x' => 10,
+            'y' => 20,
+        ], $bounds);
+    }
+}
+
+class NativeAppServiceProviderScreenFake
+{
+    /**
+     * @return array<string, array<string, int>>
+     */
+    public static function active(): array
+    {
+        return [
+            'bounds' => [
+                'height' => 1080,
+                'width' => 1920,
+                'x' => 10,
+                'y' => 20,
+            ],
+            'workArea' => [
+                'height' => 1040,
+                'width' => 1880,
+                'x' => 30,
+                'y' => 40,
+            ],
+        ];
     }
 }

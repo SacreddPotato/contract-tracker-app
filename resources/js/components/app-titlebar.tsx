@@ -11,28 +11,21 @@ const appName = import.meta.env.VITE_APP_NAME || 'Contract Tracker';
 
 export function AppTitlebar() {
     const { t } = useI18n();
-    const [pendingAction, setPendingAction] = useState<AppWindowAction | null>(
-        null,
-    );
-    const [isMaximized, setIsMaximized] = useState(true);
+    const [isMaximized, setIsMaximized] = useState(false);
 
     async function runWindowAction(action: AppWindowAction) {
-        setPendingAction(action);
+        const result = await controlAppWindow(action);
 
-        try {
-            const result = await controlAppWindow(action);
+        if (result.status !== 'handled') {
+            return;
+        }
 
-            if (result.status === 'handled') {
-                if (action === 'maximize') {
-                    setIsMaximized(true);
-                }
+        if (action === 'maximize') {
+            setIsMaximized(true);
+        }
 
-                if (action === 'restore') {
-                    setIsMaximized(false);
-                }
-            }
-        } finally {
-            setPendingAction(null);
+        if (action === 'restore') {
+            setIsMaximized(false);
         }
     }
 
@@ -45,7 +38,6 @@ export function AppTitlebar() {
             <div className="truncate px-4 text-sm font-medium">{appName}</div>
             <div className="app-no-drag flex h-full">
                 <TitlebarButton
-                    disabled={pendingAction === 'minimize'}
                     label={t('windowMinimize')}
                     onClick={() => {
                         void runWindowAction('minimize');
@@ -54,7 +46,6 @@ export function AppTitlebar() {
                     <Minus className="size-4" />
                 </TitlebarButton>
                 <TitlebarButton
-                    disabled={pendingAction === maximizeAction}
                     label={
                         isMaximized ? t('windowRestore') : t('windowMaximize')
                     }
@@ -70,7 +61,6 @@ export function AppTitlebar() {
                 </TitlebarButton>
                 <TitlebarButton
                     className="hover:bg-red-600 hover:text-white"
-                    disabled={pendingAction === 'close'}
                     label={t('windowClose')}
                     onClick={() => {
                         void runWindowAction('close');
@@ -86,13 +76,11 @@ export function AppTitlebar() {
 function TitlebarButton({
     children,
     className,
-    disabled,
     label,
     onClick,
 }: {
     children: ReactNode;
     className?: string;
-    disabled: boolean;
     label: string;
     onClick: () => void;
 }) {
@@ -103,7 +91,6 @@ function TitlebarButton({
                 'flex h-10 w-12 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-60',
                 className,
             )}
-            disabled={disabled}
             onClick={onClick}
             title={label}
             type="button"

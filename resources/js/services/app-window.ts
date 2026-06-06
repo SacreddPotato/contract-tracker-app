@@ -13,11 +13,19 @@ export async function controlAppWindow(
     action: AppWindowAction,
     { fetcher = fetch }: AppWindowControlOptions = {},
 ): Promise<AppWindowControlResult> {
-    const response = await fetcher(`/api/app/window/${action}`, {
-        method: 'POST',
-    });
+    try {
+        const response = await fetcher(`/api/app/window/${action}`, {
+            method: 'POST',
+        });
 
-    return (await response.json()) as AppWindowControlResult;
+        if (!response.ok) {
+            return { status: 'unavailable' };
+        }
+
+        return (await response.json()) as AppWindowControlResult;
+    } catch {
+        return { status: 'unavailable' };
+    }
 }
 
 export function isNativeRuntime(): boolean {

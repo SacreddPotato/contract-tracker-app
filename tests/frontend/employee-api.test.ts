@@ -12,11 +12,14 @@ const employee = {
     contractEndDate: '2026-12-31',
     contractStartDate: '2026-01-01',
     createdAt: '2026-06-04T10:30:00Z',
+    email: 'ahmed@example.com',
     id: 'employee-1',
     iqamaEndDate: null,
     iqamaStartDate: null,
     name: 'Ahmed Ali',
+    nationality: 'Egyptian',
     ownerId: 'user-1',
+    phoneNumber: '+20 100 000 0000',
     updatedAt: '2026-06-04T10:30:00Z',
 };
 
@@ -66,9 +69,12 @@ test('employee API creates and updates employees with JSON payloads', async () =
     const values = {
         contractEndDate: '2026-12-31',
         contractStartDate: '2026-01-01',
+        email: 'ahmed@example.com',
         iqamaEndDate: '',
         iqamaStartDate: '',
         name: 'Ahmed Ali',
+        nationality: 'Egyptian',
+        phoneNumber: '+20 100 000 0000',
     };
 
     assert.deepEqual(

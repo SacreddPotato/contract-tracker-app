@@ -58,6 +58,24 @@ function phpHasZip() {
         .includes('zip');
 }
 
+function commandExists(command, args = ['--version']) {
+    const result = spawnCommand(command, args);
+
+    return !result.error && result.status === 0;
+}
+
+function spawnCommand(command, args) {
+    if (process.platform === 'win32') {
+        return spawnSync('cmd.exe', ['/d', '/s', '/c', [command, ...args].join(' ')], {
+            encoding: 'utf8',
+        });
+    }
+
+    return spawnSync(command, args, {
+        encoding: 'utf8',
+    });
+}
+
 const env = loadEnvFile();
 const failures = [];
 const warnings = [];
@@ -80,6 +98,24 @@ if (!env) {
 
 if (!existsSync('node_modules')) {
     failures.push('Missing node_modules. Run npm install.');
+}
+
+if (!existsSync('supabase/config.toml')) {
+    failures.push('Missing supabase/config.toml. Run npx supabase init.');
+}
+
+if (!existsSync('supabase/migrations')) {
+    failures.push('Missing supabase/migrations directory.');
+}
+
+if (!commandExists('supabase')) {
+    failures.push('Supabase CLI is unavailable. Run npm install.');
+}
+
+if (!existsSync('supabase/.temp/project-ref')) {
+    warnings.push(
+        'Supabase CLI is not linked to the remote project. Run npm run supabase:link before applying remote migrations.',
+    );
 }
 
 if (!existsSync('vendor')) {

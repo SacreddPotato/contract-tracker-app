@@ -50,8 +50,11 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - **Tenant Rules**: Because "owners" and user-specific teams are still a pending decision, all shared tenant access currently uses `owner_id = '0'`. New employees must be created with `owner_id = '0'`, and fetching or updates should permit anyone to manipulate data where `owner_id = '0'` as a shared global pool.
 - React may authenticate with Supabase only through dedicated frontend auth services, hooks, or utilities. Do not scatter Supabase calls directly through UI components.
 - Product data access should go through Laravel API endpoints unless the user explicitly chooses direct Supabase client access for a feature.
-- Every new Supabase table or row shape must include matching SQL schema, constraints, indexes when useful, RLS policies, and verification tests.
+- Supabase schema changes must be made through timestamped SQL migration files in `supabase/migrations`, not by manually editing the current schema snapshot. Use forward-only migrations that can be reviewed, applied, and replayed in order.
+- Treat `supabase/schema.sql` as the verified schema snapshot/output for tests and review. Regenerate or update it only as part of applying migrations, and keep it consistent with the migration history.
+- Every new Supabase table or row shape must include matching migration SQL, constraints, indexes when useful, RLS policies, and verification tests.
 - RLS policies must enforce user ownership and must reject cross-user reads, writes, ownership-field changes, and unauthenticated access unless a route is intentionally public.
+- Every Supabase migration that changes product/domain data shape must include or update SQL/RLS verification coverage, such as `npm run test:frontend-schema`, and must document any required backfill or compatibility step in the migration comments or handoff notes.
 - Do not package Supabase database passwords, `sb_secret_*`, or legacy `service_role` credentials into the desktop app.
 - If SQL is explicitly reintroduced for a local-only or backend-only concern, every new model must include a relevant factory.
 - If SQL is explicitly reintroduced, every new migration that introduces or changes domain data must be paired with factory and seeder updates when seed data is useful for development or verification.

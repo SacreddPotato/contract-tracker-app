@@ -11,7 +11,7 @@ use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 class EmployeeService
 {
-    private const SELECT_COLUMNS = 'id,owner_id,name,contract_start_date,contract_end_date,iqama_start_date,iqama_end_date,created_at,updated_at';
+    private const SELECT_COLUMNS = 'id,owner_id,name,phone_number,nationality,email,contract_start_date,contract_end_date,iqama_start_date,iqama_end_date,created_at,updated_at';
 
     public function __construct(private readonly SupabaseClient $client) {}
 

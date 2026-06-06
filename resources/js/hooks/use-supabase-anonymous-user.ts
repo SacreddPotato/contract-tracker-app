@@ -8,7 +8,7 @@ export type SupabaseAnonymousUserErrorReason =
     | 'anonymousSignInFailed'
     | 'authStateUnavailable';
 
-type SupabaseAnonymousUserState = {
+export type SupabaseAnonymousUserState = {
     error: Error | null;
     errorReason: SupabaseAnonymousUserErrorReason | null;
     isLoading: boolean;

@@ -1,4 +1,5 @@
 import EmployeeController from './EmployeeController';
+import EmployeeNotificationController from './EmployeeNotificationController';
 import Settings from './Settings';
 import AppVersionController from './AppVersionController';
 import AppStartupController from './AppStartupController';
@@ -7,6 +8,10 @@ import SpaController from './SpaController';
 
 const Controllers = {
     EmployeeController: Object.assign(EmployeeController, EmployeeController),
+    EmployeeNotificationController: Object.assign(
+        EmployeeNotificationController,
+        EmployeeNotificationController,
+    ),
     Settings: Object.assign(Settings, Settings),
     AppVersionController: Object.assign(
         AppVersionController,

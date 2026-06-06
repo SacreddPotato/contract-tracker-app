@@ -1,5 +1,6 @@
 import {
     AlertCircle,
+    Eye,
     Languages,
     Pencil,
     Plus,
@@ -20,11 +21,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useEmployees } from '@/hooks/use-employees';
-import { useSupabaseAnonymousUser } from '@/hooks/use-supabase-anonymous-user';
+import type { SupabaseAnonymousUserState } from '@/hooks/use-supabase-anonymous-user';
 import { useI18n } from '@/i18n';
 import type { TranslationKey } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -52,17 +59,19 @@ type EmployeeFormDialogProps = {
 
 const statusClasses: Record<ContractStatus, string> = {
     green: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300',
+    orange: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300',
     red: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
     yellow: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
 };
 
 export function EmployeeDashboard({
+    auth,
     nativeChrome = false,
 }: {
+    auth: SupabaseAnonymousUserState;
     nativeChrome?: boolean;
 }) {
     const { direction, language, setLanguage, t } = useI18n();
-    const auth = useSupabaseAnonymousUser();
     const employeesState = useEmployees(auth.session?.access_token ?? null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(
@@ -369,6 +378,7 @@ function EmployeeRow({
             </td>
             <td className="px-4 py-4 text-center">
                 <div className="flex justify-center gap-2">
+                    <EmployeeDetailsMenu compact employee={employee} />
                     <IconButton
                         label={t('edit')}
                         onClick={() => {
@@ -436,6 +446,7 @@ function EmployeeCard({
                 </div>
             </dl>
             <div className="flex gap-2">
+                <EmployeeDetailsMenu employee={employee} />
                 <Button
                     onClick={() => {
                         onEdit(employee);
@@ -460,6 +471,79 @@ function EmployeeCard({
                 </Button>
             </div>
         </article>
+    );
+}
+
+function EmployeeDetailsMenu({
+    compact = false,
+    employee,
+}: {
+    compact?: boolean;
+    employee: Employee;
+}) {
+    const { direction, t } = useI18n();
+    const fallback = t('notSet');
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    aria-label={t('viewEmployee')}
+                    size={compact ? 'icon' : 'sm'}
+                    title={t('viewEmployee')}
+                    type="button"
+                    variant="outline"
+                >
+                    <Eye className="size-4" />
+                    {!compact && t('viewEmployee')}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72 p-3 text-sm">
+                <div className="font-medium">{employee.name}</div>
+                <DropdownMenuSeparator />
+                <dl className="grid gap-3">
+                    <DetailRow
+                        label={t('phoneNumber')}
+                        value={employee.phoneNumber ?? fallback}
+                    />
+                    <DetailRow
+                        label={t('nationality')}
+                        value={employee.nationality ?? fallback}
+                    />
+                    <DetailRow
+                        label={t('employeeEmail')}
+                        value={employee.email ?? fallback}
+                    />
+                    <DetailRow
+                        label={t('tableContract')}
+                        value={`${formatDate(
+                            employee.contractStartDate,
+                            direction,
+                        )} - ${formatDate(employee.contractEndDate, direction)}`}
+                    />
+                    <DetailRow
+                        label={t('tableIqama')}
+                        value={formatOptionalRange(
+                            employee.iqamaStartDate,
+                            employee.iqamaEndDate,
+                            direction,
+                            fallback,
+                        )}
+                    />
+                </dl>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+    return (
+        <div className="grid gap-1">
+            <dt className="text-xs font-medium text-muted-foreground">
+                {label}
+            </dt>
+            <dd className="break-words text-popover-foreground">{value}</dd>
+        </div>
     );
 }
 
@@ -574,6 +658,64 @@ function EmployeeFormDialog({
                             value={values.name}
                         />
                     </Field>
+
+                    <fieldset className="grid gap-3 sm:grid-cols-3">
+                        <legend className="mb-2 text-sm font-medium">
+                            {t('employeeDetails')}{' '}
+                            <span className="font-normal text-muted-foreground">
+                                {t('iqamaOptional')}
+                            </span>
+                        </legend>
+                        <Field
+                            error={translationForError(errors.phoneNumber, t)}
+                            id="employee-phone-number"
+                            label={t('phoneNumber')}
+                        >
+                            <Input
+                                aria-invalid={Boolean(errors.phoneNumber)}
+                                id="employee-phone-number"
+                                onChange={(event) => {
+                                    updateValue(
+                                        'phoneNumber',
+                                        event.target.value,
+                                    );
+                                }}
+                                value={values.phoneNumber}
+                            />
+                        </Field>
+                        <Field
+                            error={translationForError(errors.nationality, t)}
+                            id="employee-nationality"
+                            label={t('nationality')}
+                        >
+                            <Input
+                                aria-invalid={Boolean(errors.nationality)}
+                                id="employee-nationality"
+                                onChange={(event) => {
+                                    updateValue(
+                                        'nationality',
+                                        event.target.value,
+                                    );
+                                }}
+                                value={values.nationality}
+                            />
+                        </Field>
+                        <Field
+                            error={translationForError(errors.email, t)}
+                            id="employee-email"
+                            label={t('employeeEmail')}
+                        >
+                            <Input
+                                aria-invalid={Boolean(errors.email)}
+                                id="employee-email"
+                                onChange={(event) => {
+                                    updateValue('email', event.target.value);
+                                }}
+                                type="email"
+                                value={values.email}
+                            />
+                        </Field>
+                    </fieldset>
 
                     <fieldset className="grid gap-3 sm:grid-cols-2">
                         <legend className="mb-2 text-sm font-medium">

@@ -4,6 +4,7 @@ use App\Http\Controllers\AppStartupController;
 use App\Http\Controllers\AppVersionController;
 use App\Http\Controllers\AppWindowController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeNotificationController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Resources\UserResource;
@@ -13,6 +14,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::apiResource('employees', EmployeeController::class)
     ->only(['index', 'store', 'update', 'destroy']);
+
+Route::prefix('notifications')->name('api.notifications.')->group(function () {
+    Route::get('/', [EmployeeNotificationController::class, 'index'])->name('index');
+    Route::post('/sync', [EmployeeNotificationController::class, 'sync'])->name('sync');
+    Route::get('/unread-count', [EmployeeNotificationController::class, 'unreadCount'])->name('unread-count');
+    Route::patch('/read-all', [EmployeeNotificationController::class, 'markAllRead'])->name('read-all');
+    Route::patch('/{notification}/read', [EmployeeNotificationController::class, 'markRead'])->name('read');
+});
 
 Route::middleware(['web', 'auth:sanctum'])->group(function () {
     Route::get('/user', fn (Request $request) => UserResource::make($request->user()));

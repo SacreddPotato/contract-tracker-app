@@ -47,3 +47,15 @@ test('window control service posts the requested native window action', async ()
         ],
     );
 });
+
+test('window control service reports unavailable on failed window requests', async () => {
+    const failingFetcher = async (): Promise<Response> =>
+        new Response(null, { status: 500 });
+
+    assert.deepEqual(
+        await controlAppWindow('minimize', { fetcher: failingFetcher }),
+        {
+            status: 'unavailable',
+        },
+    );
+});

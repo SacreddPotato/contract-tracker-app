@@ -1,66 +1,8 @@
-create extension if not exists "pgcrypto";
+-- Store durable in-app notifications for contract deadline thresholds.
+-- Notifications are unique per employee, interval, and contract end date so
+-- catch-up syncs cannot create duplicates for the same contract period.
 
-create table public.employees (
-    id uuid primary key default gen_random_uuid(),
-    owner_id text not null default '0',
-    name text not null,
-    phone_number text null,
-    nationality text null,
-    email text null,
-    contract_start_date date not null,
-    contract_end_date date not null,
-    iqama_start_date date null,
-    iqama_end_date date null,
-    created_at timestamp with time zone not null default now(),
-    updated_at timestamp with time zone not null default now()
-);
-
-alter table public.employees enable row level security;
-
-create policy employees_shared_select
-    on public.employees
-    for select
-    to authenticated
-    using (owner_id = '0');
-
-create policy employees_shared_insert
-    on public.employees
-    for insert
-    to authenticated
-    with check (owner_id = '0');
-
-create policy employees_shared_update
-    on public.employees
-    for update
-    to authenticated
-    using (owner_id = '0')
-    with check (owner_id = '0');
-
-create policy employees_shared_delete
-    on public.employees
-    for delete
-    to authenticated
-    using (owner_id = '0');
-
-create or replace function public.prevent_employee_owner_change()
-returns trigger
-language plpgsql
-as $$
-begin
-    if new.owner_id is distinct from old.owner_id then
-        raise exception 'employee owner_id cannot be changed';
-    end if;
-
-    return new;
-end;
-$$;
-
-create trigger prevent_employee_owner_change
-    before update on public.employees
-    for each row
-    execute function public.prevent_employee_owner_change();
-
-create table public.employee_notifications (
+create table if not exists public.employee_notifications (
     id uuid primary key default gen_random_uuid(),
     owner_id text not null default '0',
     employee_id uuid not null references public.employees(id) on delete cascade,
@@ -74,26 +16,29 @@ create table public.employee_notifications (
     constraint employee_notifications_unique_contract_interval unique (employee_id, interval_days, contract_end_date)
 );
 
-create index employee_notifications_owner_id_idx
+create index if not exists employee_notifications_owner_id_idx
     on public.employee_notifications (owner_id, read_at, created_at desc);
 
-create index employee_notifications_employee_id_idx
+create index if not exists employee_notifications_employee_id_idx
     on public.employee_notifications (employee_id);
 
 alter table public.employee_notifications enable row level security;
 
+drop policy if exists employee_notifications_shared_select on public.employee_notifications;
 create policy employee_notifications_shared_select
     on public.employee_notifications
     for select
     to authenticated
     using (owner_id = '0');
 
+drop policy if exists employee_notifications_shared_insert on public.employee_notifications;
 create policy employee_notifications_shared_insert
     on public.employee_notifications
     for insert
     to authenticated
     with check (owner_id = '0');
 
+drop policy if exists employee_notifications_shared_update on public.employee_notifications;
 create policy employee_notifications_shared_update
     on public.employee_notifications
     for update
@@ -101,6 +46,7 @@ create policy employee_notifications_shared_update
     using (owner_id = '0')
     with check (owner_id = '0');
 
+drop policy if exists employee_notifications_shared_delete on public.employee_notifications;
 create policy employee_notifications_shared_delete
     on public.employee_notifications
     for delete
@@ -119,6 +65,9 @@ begin
     return new;
 end;
 $$;
+
+drop trigger if exists prevent_employee_notification_owner_change
+    on public.employee_notifications;
 
 create trigger prevent_employee_notification_owner_change
     before update on public.employee_notifications
