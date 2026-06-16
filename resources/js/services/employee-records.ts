@@ -93,7 +93,18 @@ export function contractDaysLeft(
     contractEndDate: string,
     today = new Date(),
 ): number {
-    const endDate = parseDateOnly(contractEndDate);
+    return daysLeftUntil(contractEndDate, today) ?? 0;
+}
+
+export function daysLeftUntil(
+    date: string | null,
+    today = new Date(),
+): number | null {
+    if (!date) {
+        return null;
+    }
+
+    const endDate = parseDateOnly(date);
     const currentDate = startOfLocalDay(today);
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
 

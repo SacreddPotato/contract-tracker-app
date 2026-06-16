@@ -1,13 +1,19 @@
 import {
     AlertCircle,
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
+    Download,
     Eye,
+    Filter,
     Languages,
     Pencil,
     Plus,
     RefreshCw,
+    Search,
     Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -23,7 +29,10 @@ import {
 } from '@/components/ui/dialog';
 import {
     DropdownMenu,
+    DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -35,13 +44,6 @@ import type { SupabaseAnonymousUserState } from '@/hooks/use-supabase-anonymous-
 import { useI18n } from '@/i18n';
 import type { TranslationKey } from '@/i18n';
 import { cn } from '@/lib/utils';
-import {
-    contractDaysLeft,
-    contractStatusForDate,
-    employeeToFormValues,
-    emptyEmployeeFormValues,
-    validateEmployeeForm,
-} from '@/services/employee-records';
 import type {
     ContractStatus,
     Employee,
@@ -49,6 +51,28 @@ import type {
     EmployeeFormValues,
     EmployeeValidationErrorKey,
 } from '@/services/employee-records';
+import {
+    employeeToFormValues,
+    emptyEmployeeFormValues,
+    validateEmployeeForm,
+} from '@/services/employee-records';
+import type {
+    EmployeeDeadlineFilter,
+    EmployeeExportColumnKey,
+    EmployeeSortColumn,
+    EmployeeSortState,
+    EmployeeTableRow,
+} from '@/services/employee-table';
+import {
+    buildEmployeeTableRows,
+    employeeExportColumnKeys,
+    employeeExportColumnLabelKeys,
+    formatDate,
+    formatDaysLeft,
+    formatOptionalRange,
+    getNextEmployeeSort,
+} from '@/services/employee-table';
+import { exportEmployeeRowsToXlsx } from '@/services/employee-xlsx-export';
 
 type EmployeeFormDialogProps = {
     employee: Employee | null;
@@ -63,6 +87,8 @@ const statusClasses: Record<ContractStatus, string> = {
     red: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
     yellow: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300',
 };
+
+const deadlineFilterOptions: EmployeeDeadlineFilter[] = [30, 60, 90];
 
 export function EmployeeDashboard({
     auth,
@@ -120,13 +146,13 @@ export function EmployeeDashboard({
     return (
         <main
             className={cn(
-                'bg-background text-foreground',
+                'min-w-fit bg-background text-foreground',
                 nativeChrome ? 'min-h-[calc(100vh-2.5rem)]' : 'min-h-screen',
             )}
         >
             <section
                 className={cn(
-                    'mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8',
+                    'mx-auto flex w-max min-w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8',
                     nativeChrome
                         ? 'min-h-[calc(100vh-2.5rem)]'
                         : 'min-h-screen',
@@ -281,47 +307,326 @@ function EmployeeList({
     onDelete: (employee: Employee) => void;
     onEdit: (employee: Employee) => void;
 }) {
+    const { language, t } = useI18n();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sort, setSort] = useState<EmployeeSortState | null>(null);
+    const [contractDeadlineFilter, setContractDeadlineFilter] =
+        useState<EmployeeDeadlineFilter | null>(null);
+    const [iqamaDeadlineFilter, setIqamaDeadlineFilter] =
+        useState<EmployeeDeadlineFilter | null>(null);
+    const [selectedExportColumns, setSelectedExportColumns] = useState<
+        EmployeeExportColumnKey[]
+    >([...employeeExportColumnKeys]);
+    const [isExporting, setIsExporting] = useState(false);
+    const rows = useMemo(
+        () =>
+            buildEmployeeTableRows(employees, {
+                contractDeadlineFilter,
+                iqamaDeadlineFilter,
+                searchQuery,
+                sort,
+            }),
+        [
+            contractDeadlineFilter,
+            employees,
+            iqamaDeadlineFilter,
+            searchQuery,
+            sort,
+        ],
+    );
+
+    function sortBy(column: EmployeeSortColumn) {
+        setSort((currentSort) => getNextEmployeeSort(currentSort, column));
+    }
+
+    function toggleExportColumn(column: EmployeeExportColumnKey) {
+        setSelectedExportColumns((currentColumns) =>
+            currentColumns.includes(column)
+                ? currentColumns.filter(
+                      (currentColumn) => currentColumn !== column,
+                  )
+                : employeeExportColumnKeys.filter(
+                      (currentColumn) =>
+                          currentColumns.includes(currentColumn) ||
+                          currentColumn === column,
+                  ),
+        );
+    }
+
+    async function exportRows() {
+        if (selectedExportColumns.length === 0) {
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            await exportEmployeeRowsToXlsx({
+                columns: selectedExportColumns,
+                direction,
+                language,
+                notSetLabel: t('notSet'),
+                rows,
+                t,
+            });
+        } finally {
+            setIsExporting(false);
+        }
+    }
+
+    return (
+        <div className="space-y-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:max-w-sm">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        aria-label={t('searchEmployees')}
+                        className="ps-9"
+                        onChange={(event) => {
+                            setSearchQuery(event.target.value);
+                        }}
+                        placeholder={t('searchEmployeesPlaceholder')}
+                        value={searchQuery}
+                    />
+                </div>
+                <ExportMenu
+                    disabled={selectedExportColumns.length === 0}
+                    isExporting={isExporting}
+                    onExport={() => {
+                        void exportRows();
+                    }}
+                    onToggleColumn={toggleExportColumn}
+                    selectedColumns={selectedExportColumns}
+                />
+            </div>
+
+            {rows.length === 0 ? (
+                <div className="flex min-h-48 flex-col items-center justify-center rounded-md border border-dashed px-6 text-center">
+                    <h2 className="text-lg font-medium">
+                        {t('filteredEmployeesEmptyTitle')}
+                    </h2>
+                    <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                        {t('filteredEmployeesEmptyDescription')}
+                    </p>
+                </div>
+            ) : (
+                <div className="rounded-md border">
+                    <div className="hidden md:block">
+                        <table className="w-full min-w-275 text-center text-sm">
+                            <thead className="border-b bg-muted/60 text-muted-foreground">
+                                <tr className="text-center">
+                                    <SortableTableHeader
+                                        column="name"
+                                        label={t('tableEmployee')}
+                                        onSort={sortBy}
+                                        sort={sort}
+                                    />
+                                    <SortableTableHeader
+                                        column="contractRange"
+                                        label={t('tableContract')}
+                                        onSort={sortBy}
+                                        sort={sort}
+                                    />
+                                    <SortableTableHeader
+                                        column="iqamaRange"
+                                        label={t('tableIqama')}
+                                        onSort={sortBy}
+                                        sort={sort}
+                                    />
+                                    <DeadlineTableHeader
+                                        column="contractTimeLeft"
+                                        filter={contractDeadlineFilter}
+                                        label={t('tableTimeUntilContractEnd')}
+                                        onFilterChange={
+                                            setContractDeadlineFilter
+                                        }
+                                        onSort={sortBy}
+                                        sort={sort}
+                                    />
+                                    <DeadlineTableHeader
+                                        column="iqamaTimeLeft"
+                                        filter={iqamaDeadlineFilter}
+                                        label={t('tableTimeUntilIqamaEnd')}
+                                        onFilterChange={setIqamaDeadlineFilter}
+                                        onSort={sortBy}
+                                        sort={sort}
+                                    />
+                                    <TableHeader className="text-center">
+                                        {t('tableActions')}
+                                    </TableHeader>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row) => (
+                                    <EmployeeRow
+                                        direction={direction}
+                                        key={row.employee.id}
+                                        onDelete={onDelete}
+                                        onEdit={onEdit}
+                                        row={row}
+                                    />
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div className="divide-y md:hidden">
+                        {rows.map((row) => (
+                            <EmployeeCard
+                                key={row.employee.id}
+                                onDelete={onDelete}
+                                onEdit={onEdit}
+                                row={row}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function ExportMenu({
+    disabled,
+    isExporting,
+    onExport,
+    onToggleColumn,
+    selectedColumns,
+}: {
+    disabled: boolean;
+    isExporting: boolean;
+    onExport: () => void;
+    onToggleColumn: (column: EmployeeExportColumnKey) => void;
+    selectedColumns: EmployeeExportColumnKey[];
+}) {
     const { t } = useI18n();
 
     return (
-        <div className="overflow-hidden rounded-md border">
-            <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-195 text-center text-sm">
-                    <thead className="border-b bg-muted/60 text-muted-foreground">
-                        <tr className="text-center">
-                            <TableHeader>{t('tableEmployee')}</TableHeader>
-                            <TableHeader>{t('tableContract')}</TableHeader>
-                            <TableHeader>{t('tableIqama')}</TableHeader>
-                            <TableHeader>{t('tableStatus')}</TableHeader>
-                            <TableHeader className="text-center">
-                                {t('tableActions')}
-                            </TableHeader>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {employees.map((employee) => (
-                            <EmployeeRow
-                                direction={direction}
-                                employee={employee}
-                                key={employee.id}
-                                onDelete={onDelete}
-                                onEdit={onEdit}
-                            />
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="divide-y md:hidden">
-                {employees.map((employee) => (
-                    <EmployeeCard
-                        employee={employee}
-                        key={employee.id}
-                        onDelete={onDelete}
-                        onEdit={onEdit}
-                    />
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline">
+                    <Download className="size-4" />
+                    {t('exportTable')}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>{t('exportColumns')}</DropdownMenuLabel>
+                {employeeExportColumnKeys.map((column) => (
+                    <DropdownMenuCheckboxItem
+                        checked={selectedColumns.includes(column)}
+                        key={column}
+                        onCheckedChange={() => {
+                            onToggleColumn(column);
+                        }}
+                    >
+                        {t(employeeExportColumnLabelKeys[column])}
+                    </DropdownMenuCheckboxItem>
                 ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                    disabled={disabled || isExporting}
+                    onSelect={onExport}
+                >
+                    <Download className="size-4" />
+                    {t('exportXlsx')}
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+function SortableTableHeader({
+    className,
+    column,
+    label,
+    onSort,
+    sort,
+}: {
+    className?: string;
+    column: EmployeeSortColumn;
+    label: string;
+    onSort: (column: EmployeeSortColumn) => void;
+    sort: EmployeeSortState | null;
+}) {
+    return (
+        <TableHeader className={className}>
+            <SortButton
+                column={column}
+                label={label}
+                onSort={onSort}
+                sort={sort}
+            />
+        </TableHeader>
+    );
+}
+
+function DeadlineTableHeader({
+    column,
+    filter,
+    label,
+    onFilterChange,
+    onSort,
+    sort,
+}: {
+    column: EmployeeSortColumn;
+    filter: EmployeeDeadlineFilter | null;
+    label: string;
+    onFilterChange: (filter: EmployeeDeadlineFilter | null) => void;
+    onSort: (column: EmployeeSortColumn) => void;
+    sort: EmployeeSortState | null;
+}) {
+    const { t } = useI18n();
+
+    return (
+        <TableHeader>
+            <div className="flex items-center justify-center gap-1">
+                <SortButton
+                    column={column}
+                    label={label}
+                    onSort={onSort}
+                    sort={sort}
+                />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            aria-label={`${label}: ${t('deadlineFilter')}`}
+                            className={cn(
+                                'size-8',
+                                filter !== null &&
+                                    'bg-accent text-accent-foreground',
+                            )}
+                            size="icon"
+                            title={t('deadlineFilter')}
+                            type="button"
+                            variant="ghost"
+                        >
+                            <Filter className="size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuCheckboxItem
+                            checked={filter === null}
+                            onCheckedChange={() => {
+                                onFilterChange(null);
+                            }}
+                        >
+                            {t('filterAllDeadlines')}
+                        </DropdownMenuCheckboxItem>
+                        <DropdownMenuSeparator />
+                        {deadlineFilterOptions.map((option) => (
+                            <DropdownMenuCheckboxItem
+                                checked={filter === option}
+                                key={option}
+                                onCheckedChange={() => {
+                                    onFilterChange(option);
+                                }}
+                            >
+                                {t('filterUnderDays', { count: option })}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
-        </div>
+        </TableHeader>
     );
 }
 
@@ -329,7 +634,7 @@ function TableHeader({
     children,
     className,
 }: {
-    children: string;
+    children: ReactNode;
     className?: string;
 }) {
     return (
@@ -345,18 +650,62 @@ function TableHeader({
     );
 }
 
-function EmployeeRow({
-    direction,
-    employee,
-    onDelete,
-    onEdit,
+function SortButton({
+    column,
+    label,
+    onSort,
+    sort,
 }: {
-    direction: 'ltr' | 'rtl';
-    employee: Employee;
-    onDelete: (employee: Employee) => void;
-    onEdit: (employee: Employee) => void;
+    column: EmployeeSortColumn;
+    label: string;
+    onSort: (column: EmployeeSortColumn) => void;
+    sort: EmployeeSortState | null;
 }) {
     const { t } = useI18n();
+    const isActive = sort?.column === column;
+    const sortLabel = isActive
+        ? sort.direction === 'asc'
+            ? t('sortDescending')
+            : t('sortAscending')
+        : t('sortAscending');
+
+    return (
+        <Button
+            aria-label={`${label}: ${sortLabel}`}
+            className="h-auto px-2 py-1 text-center text-xs font-medium tracking-normal whitespace-normal text-muted-foreground uppercase hover:text-foreground"
+            onClick={() => {
+                onSort(column);
+            }}
+            type="button"
+            variant="ghost"
+        >
+            <span>{label}</span>
+            {isActive ? (
+                sort.direction === 'asc' ? (
+                    <ArrowUp className="size-3.5" />
+                ) : (
+                    <ArrowDown className="size-3.5" />
+                )
+            ) : (
+                <ArrowUpDown className="size-3.5" />
+            )}
+        </Button>
+    );
+}
+
+function EmployeeRow({
+    direction,
+    onDelete,
+    onEdit,
+    row,
+}: {
+    direction: 'ltr' | 'rtl';
+    onDelete: (employee: Employee) => void;
+    onEdit: (employee: Employee) => void;
+    row: EmployeeTableRow;
+}) {
+    const { t } = useI18n();
+    const { employee } = row;
 
     return (
         <tr className="border-b last:border-b-0">
@@ -374,7 +723,10 @@ function EmployeeRow({
                 )}
             </td>
             <td className="px-4 py-4">
-                <ContractStatusBadge employee={employee} />
+                <DeadlineBadge daysLeft={row.contractDaysLeft} />
+            </td>
+            <td className="px-4 py-4">
+                <DeadlineBadge daysLeft={row.iqamaDaysLeft} />
             </td>
             <td className="px-4 py-4 text-center">
                 <div className="flex justify-center gap-2">
@@ -402,15 +754,16 @@ function EmployeeRow({
 }
 
 function EmployeeCard({
-    employee,
     onDelete,
     onEdit,
+    row,
 }: {
-    employee: Employee;
     onDelete: (employee: Employee) => void;
     onEdit: (employee: Employee) => void;
+    row: EmployeeTableRow;
 }) {
     const { direction, t } = useI18n();
+    const { employee } = row;
 
     return (
         <article className="space-y-4 p-4">
@@ -421,7 +774,7 @@ function EmployeeCard({
                         {formatDate(employee.contractEndDate, direction)}
                     </p>
                 </div>
-                <ContractStatusBadge employee={employee} />
+                <DeadlineBadge daysLeft={row.contractDaysLeft} />
             </div>
             <dl className="grid gap-3 text-sm">
                 <div>
@@ -442,6 +795,22 @@ function EmployeeCard({
                             direction,
                             t('noIqamaDate'),
                         )}
+                    </dd>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">
+                        {t('tableTimeUntilContractEnd')}
+                    </dt>
+                    <dd>{formatDaysLeft(row.contractDaysLeft, t)}</dd>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">
+                        {t('tableTimeUntilIqamaEnd')}
+                    </dt>
+                    <dd>
+                        {row.iqamaDaysLeft === null
+                            ? t('notSet')
+                            : formatDaysLeft(row.iqamaDaysLeft, t)}
                     </dd>
                 </div>
             </dl>
@@ -547,34 +916,37 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-function ContractStatusBadge({ employee }: { employee: Employee }) {
+function DeadlineBadge({ daysLeft }: { daysLeft: number | null }) {
     const { t } = useI18n();
-    const status = contractStatusForDate(employee.contractEndDate);
-    const daysLeft = contractDaysLeft(employee.contractEndDate);
+
+    if (daysLeft === null) {
+        return <Badge variant="outline">{t('notSet')}</Badge>;
+    }
 
     return (
-        <Badge className={statusClasses[status]} variant="outline">
+        <Badge
+            className={statusClasses[statusForDaysLeft(daysLeft)]}
+            variant="outline"
+        >
             {formatDaysLeft(daysLeft, t)}
         </Badge>
     );
 }
 
-function formatDaysLeft(
-    daysLeft: number,
-    t: (
-        key: TranslationKey,
-        replacements?: Partial<Record<'count', string | number>>,
-    ) => string,
-): string {
-    if (daysLeft < 0) {
-        return t('contractDaysExpired', { count: Math.abs(daysLeft) });
+function statusForDaysLeft(daysLeft: number): ContractStatus {
+    if (daysLeft <= 30) {
+        return 'red';
     }
 
-    if (daysLeft === 0) {
-        return t('contractEndsToday');
+    if (daysLeft <= 60) {
+        return 'orange';
     }
 
-    return t('contractDaysLeft', { count: daysLeft });
+    if (daysLeft <= 90) {
+        return 'yellow';
+    }
+
+    return 'green';
 }
 
 function EmployeeFormDialog({
@@ -928,30 +1300,4 @@ function translationForError(
     t: (key: TranslationKey) => string,
 ): string | undefined {
     return error ? t(error) : undefined;
-}
-
-function formatDate(value: string, direction: 'ltr' | 'rtl'): string {
-    const [year, month, day] = value.split('-').map(Number);
-    const date = new Date(year ?? 0, (month ?? 1) - 1, day ?? 1);
-
-    return new Intl.DateTimeFormat(direction === 'rtl' ? 'ar-EG' : 'en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    }).format(date);
-}
-
-function formatOptionalRange(
-    startDate: string | null,
-    endDate: string | null,
-    direction: 'ltr' | 'rtl',
-    fallback: string,
-): string {
-    if (!startDate && !endDate) {
-        return fallback;
-    }
-
-    return `${startDate ? formatDate(startDate, direction) : fallback} - ${
-        endDate ? formatDate(endDate, direction) : fallback
-    }`;
 }
