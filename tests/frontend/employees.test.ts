@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import {
@@ -6,11 +7,26 @@ import {
     buildEmployeeUpdate,
     contractDaysLeft,
     contractStatusForDate,
+    daysLeftUntil,
     employeeToFormValues,
     validateEmployeeForm,
 } from '../../resources/js/services/employee-records.ts';
+import {
+    buildEmployeeExportMatrix,
+    buildEmployeeTableRows,
+    employeeExportColumnKeys,
+    getNextEmployeeSort,
+} from '../../resources/js/services/employee-table.ts';
+import type { EmployeeSortState } from '../../resources/js/services/employee-table.ts';
 
 const today = new Date(2026, 5, 4);
+const dashboardSource = readFileSync(
+    new URL(
+        '../../resources/js/components/employee-dashboard.tsx',
+        import.meta.url,
+    ),
+    'utf8',
+);
 
 test('contract status is green when the end date is more than 90 days away', () => {
     assert.equal(contractStatusForDate('2026-09-03', today), 'green');
@@ -35,6 +51,181 @@ test('contract days left counts calendar days until the contract end date', () =
     assert.equal(contractDaysLeft('2026-06-14', today), 10);
     assert.equal(contractDaysLeft('2026-06-04', today), 0);
     assert.equal(contractDaysLeft('2026-06-01', today), -3);
+});
+
+test('generic days left supports optional iqama end dates', () => {
+    assert.equal(daysLeftUntil('2026-06-14', today), 10);
+    assert.equal(daysLeftUntil(null, today), null);
+});
+
+const tableEmployees = [
+    employeeFixture({
+        contractEndDate: '2026-06-20',
+        id: '1',
+        iqamaEndDate: '2026-08-01',
+        name: 'Mona Ali',
+    }),
+    employeeFixture({
+        contractEndDate: '2026-09-20',
+        id: '2',
+        iqamaEndDate: '2026-06-15',
+        name: 'Ahmed Hassan',
+    }),
+    employeeFixture({
+        contractEndDate: '2026-07-10',
+        id: '3',
+        iqamaEndDate: null,
+        name: 'Sara Nabil',
+    }),
+];
+
+test('employee table search filters by name only', () => {
+    const rows = buildEmployeeTableRows(tableEmployees, {
+        contractDeadlineFilter: null,
+        iqamaDeadlineFilter: null,
+        searchQuery: 'ahmed',
+        sort: null,
+        today,
+    });
+
+    assert.deepEqual(
+        rows.map((row) => row.employee.name),
+        ['Ahmed Hassan'],
+    );
+});
+
+test('employee table deadline filters combine contract and iqama thresholds with and logic', () => {
+    const rows = buildEmployeeTableRows(tableEmployees, {
+        contractDeadlineFilter: 90,
+        iqamaDeadlineFilter: 60,
+        searchQuery: '',
+        sort: null,
+        today,
+    });
+
+    assert.deepEqual(
+        rows.map((row) => row.employee.name),
+        ['Mona Ali'],
+    );
+});
+
+test('missing iqama deadlines do not match iqama deadline filters', () => {
+    const rows = buildEmployeeTableRows(tableEmployees, {
+        contractDeadlineFilter: null,
+        iqamaDeadlineFilter: 90,
+        searchQuery: '',
+        sort: null,
+        today,
+    });
+
+    assert.deepEqual(
+        rows.map((row) => row.employee.name),
+        ['Mona Ali', 'Ahmed Hassan'],
+    );
+});
+
+test('employee table sorts names ascending and deadline columns descending first', () => {
+    const nameSort: EmployeeSortState = { column: 'name', direction: 'asc' };
+    const deadlineSort: EmployeeSortState = {
+        column: 'contractTimeLeft',
+        direction: 'desc',
+    };
+
+    assert.deepEqual(
+        buildEmployeeTableRows(tableEmployees, {
+            contractDeadlineFilter: null,
+            iqamaDeadlineFilter: null,
+            searchQuery: '',
+            sort: nameSort,
+            today,
+        }).map((row) => row.employee.name),
+        ['Ahmed Hassan', 'Mona Ali', 'Sara Nabil'],
+    );
+    assert.deepEqual(
+        buildEmployeeTableRows(tableEmployees, {
+            contractDeadlineFilter: null,
+            iqamaDeadlineFilter: null,
+            searchQuery: '',
+            sort: deadlineSort,
+            today,
+        }).map((row) => row.employee.name),
+        ['Ahmed Hassan', 'Sara Nabil', 'Mona Ali'],
+    );
+});
+
+test('employee sort toggles normal columns ascending first and deadline columns descending first', () => {
+    assert.deepEqual(getNextEmployeeSort(null, 'name'), {
+        column: 'name',
+        direction: 'asc',
+    });
+    assert.deepEqual(getNextEmployeeSort(null, 'iqamaTimeLeft'), {
+        column: 'iqamaTimeLeft',
+        direction: 'desc',
+    });
+    assert.deepEqual(
+        getNextEmployeeSort(
+            { column: 'iqamaTimeLeft', direction: 'desc' },
+            'iqamaTimeLeft',
+        ),
+        {
+            column: 'iqamaTimeLeft',
+            direction: 'asc',
+        },
+    );
+});
+
+test('employee export matrix uses selected localized columns', () => {
+    const rows = buildEmployeeTableRows(tableEmployees, {
+        contractDeadlineFilter: null,
+        iqamaDeadlineFilter: null,
+        searchQuery: 'mona',
+        sort: null,
+        today,
+    });
+    const columns = employeeExportColumnKeys.filter((column) =>
+        ['name', 'contractTimeLeft', 'iqamaTimeLeft'].includes(column),
+    );
+    const translations: Record<string, string> = {
+        contractDaysExpired: 'متأخر {count} يوم',
+        contractDaysLeft: 'متبقي {count} يوم',
+        contractEndsToday: 'ينتهي اليوم',
+        employeeName: 'اسم الموظف',
+        tableContract: 'العقد',
+        tableIqama: 'الإقامة',
+        tableTimeUntilContractEnd: 'المدة حتى نهاية العقد',
+        tableTimeUntilIqamaEnd: 'المدة حتى نهاية الإقامة',
+    };
+
+    assert.deepEqual(
+        buildEmployeeExportMatrix(rows, columns, {
+            direction: 'rtl',
+            notSetLabel: 'غير محدد',
+            t: (key, replacements = {}) => {
+                let message = translations[key] ?? key;
+
+                for (const [replacementKey, replacementValue] of Object.entries(
+                    replacements,
+                )) {
+                    message = message.replace(
+                        `{${replacementKey}}`,
+                        String(replacementValue),
+                    );
+                }
+
+                return message;
+            },
+        }),
+        [
+            ['اسم الموظف', 'المدة حتى نهاية العقد', 'المدة حتى نهاية الإقامة'],
+            ['Mona Ali', 'متبقي 16 يوم', 'متبقي 58 يوم'],
+        ],
+    );
+});
+
+test('employee desktop table stretches page width instead of using an internal scrollbar', () => {
+    assert.doesNotMatch(dashboardSource, /overflow-x-auto/);
+    assert.doesNotMatch(dashboardSource, /max-w-6xl/);
+    assert.doesNotMatch(dashboardSource, /overflow-hidden rounded-md border/);
 });
 
 test('employee form validation trims names and requires contract dates', () => {
@@ -162,3 +353,23 @@ test('employee form values include optional employee details', () => {
         },
     );
 });
+
+function employeeFixture(
+    overrides: Partial<Parameters<typeof employeeToFormValues>[0]>,
+): Parameters<typeof employeeToFormValues>[0] {
+    return {
+        contractEndDate: '2026-12-31',
+        contractStartDate: '2026-01-01',
+        createdAt: '2026-06-04T10:30:00.000Z',
+        email: null,
+        id: 'employee-1',
+        iqamaEndDate: null,
+        iqamaStartDate: null,
+        name: 'Employee',
+        nationality: null,
+        ownerId: '0',
+        phoneNumber: null,
+        updatedAt: '2026-06-04T10:30:00.000Z',
+        ...overrides,
+    };
+}

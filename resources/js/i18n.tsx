@@ -36,6 +36,7 @@ const translations = {
         contractStartDate: 'Contract start date',
         contractStartDateInvalid: 'Use a valid contract start date.',
         contractStartDateRequired: 'Contract start date is required.',
+        deadlineFilter: 'Deadline filter',
         dashboardSubtitle:
             'Track contract and iqama dates for the current workspace.',
         dashboardTitle: 'Employee contracts',
@@ -50,6 +51,9 @@ const translations = {
         emptyDescription:
             'Add your first employee to start tracking contract deadlines.',
         emptyTitle: 'No employees yet',
+        exportColumns: 'Export columns',
+        exportTable: 'Export',
+        exportXlsx: 'Download XLSX',
         employeeName: 'Employee name',
         employeeDetails: 'Employee details',
         employeeEmail: 'Email',
@@ -58,6 +62,11 @@ const translations = {
             'Supabase is not configured. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to start tracking employees.',
         formHelp:
             'Required fields are name, contract start date, and contract end date. Employee details are optional.',
+        filterAllDeadlines: 'Show all',
+        filterUnderDays: 'Show only under {count} days',
+        filteredEmployeesEmptyDescription:
+            'Adjust the search or deadline filters to see more employees.',
+        filteredEmployeesEmptyTitle: 'No matching employees',
         iqamaDates: 'Iqama dates',
         iqamaEndDate: 'Iqama end date',
         iqamaEndDateInvalid: 'Use a valid iqama end date.',
@@ -95,6 +104,8 @@ const translations = {
         save: 'Save',
         saveEmployeeError: 'Unable to save the employee.',
         saving: 'Saving',
+        searchEmployees: 'Search employees',
+        searchEmployeesPlaceholder: 'Search by employee name',
         settingsSubtitle: 'Manage desktop preferences for this app.',
         settingsTitle: 'Settings',
         startWithWindows: 'Start with Windows',
@@ -108,11 +119,15 @@ const translations = {
         statusYellow: 'Watch',
         contractNotificationMessage:
             '{employee} has a contract ending within {count} days.',
+        sortAscending: 'Sort ascending',
+        sortDescending: 'Sort descending',
         tableActions: 'Actions',
         tableContract: 'Contract',
         tableEmployee: 'Employee',
         tableIqama: 'Iqama',
         tableStatus: 'Status',
+        tableTimeUntilContractEnd: 'Time until contract end',
+        tableTimeUntilIqamaEnd: 'Time until iqama end',
         updateEmployee: 'Update employee',
         updateInstalling: 'Installing',
         updateReadyDescription:
@@ -126,6 +141,21 @@ const translations = {
         windowRestore: 'Restore window',
     },
     ar: {
+        deadlineFilter: 'تصفية الموعد',
+        exportColumns: 'أعمدة التصدير',
+        exportTable: 'تصدير',
+        exportXlsx: 'تنزيل XLSX',
+        filterAllDeadlines: 'عرض الكل',
+        filterUnderDays: 'عرض أقل من {count} يوم فقط',
+        filteredEmployeesEmptyDescription:
+            'عدّل البحث أو تصفيات المواعيد لعرض مزيد من الموظفين.',
+        filteredEmployeesEmptyTitle: 'لا توجد نتائج مطابقة',
+        searchEmployees: 'بحث الموظفين',
+        searchEmployeesPlaceholder: 'ابحث باسم الموظف',
+        sortAscending: 'ترتيب تصاعدي',
+        sortDescending: 'ترتيب تنازلي',
+        tableTimeUntilContractEnd: 'المدة حتى نهاية العقد',
+        tableTimeUntilIqamaEnd: 'المدة حتى نهاية الإقامة',
         addEmployee: 'إضافة موظف',
         anonymousAuthUnavailable:
             'تم إعداد Supabase، لكن تسجيل الدخول المجهول غير متاح. فعّل تسجيل الدخول المجهول في Supabase Auth ثم أعد تحميل التطبيق.',

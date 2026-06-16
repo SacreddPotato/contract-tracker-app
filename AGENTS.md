@@ -84,6 +84,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Reuse existing UI primitives and project styling conventions before introducing new component patterns.
 - Every new or changed user-facing UI string must be added to the translation dictionary for all supported languages. Do not hardcode English or Arabic strings in components except stable product names, technical tokens, or values intentionally shown verbatim.
 - Keep generated route/action helpers only if they remain compatible with the API-first direction.
+- Employee dashboard table controls are React-owned client-side behavior: name search filters only employee names, table sorting/filtering/export use the shared employee table helpers, deadline filters live per contract/iqama deadline column and combine with `AND`, and XLSX export uses the current language with Arabic RTL worksheet formatting when Arabic is selected.
 
 ## NativePHP Desktop, Releases, And Updates
 
