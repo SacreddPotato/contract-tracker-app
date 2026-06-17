@@ -101,6 +101,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Public GitHub Releases are the default updater source. Private releases require a token strategy that does not bundle long-lived secrets into the packaged app.
 - Treat `ext-zip` as a required PHP extension for NativePHP build environments.
 - Current Windows release exception: the release workflow intentionally packages `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` from GitHub repo Variables into the production app. This is a user-approved exception for the current release model; do not echo their values in logs, only log `SET` or `UNSET`, and do not include `NEON_TESTING_DATABASE_URL` in production release builds.
+- NativePHP's default bundled PHP binary does not include PostgreSQL extensions. Windows releases for this Neon-backed app must build and package a custom NativePHP PHP binary with `pgsql` and `pdo_pgsql`, verify those extensions before `native:publish`, and set `NATIVEPHP_PHP_BINARY_PATH` to that custom binary source.
 
 ## GitHub Actions, Tagging, And Releases
 

@@ -104,11 +104,18 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_RELEASE_TYPE: draft
-      APP_API_TOKEN: ${{ vars.APP_API_TOKEN }}
-      NEON_PRODUCTION_DATABASE_URL: ${{ vars.NEON_PRODUCTION_DATABASE_URL }}
       WORKFLOW_DISPATCH_VERSION: ${{ inputs.version }}
+      SPC_VERSION: 2.8.5
 
     steps:
+      - name: Mask release variables
+        shell: pwsh
+        run: |
+          Write-Output "::add-mask::${{ vars.APP_API_TOKEN }}"
+          Write-Output "::add-mask::${{ vars.NEON_PRODUCTION_DATABASE_URL }}"
+          "APP_API_TOKEN=${{ vars.APP_API_TOKEN }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "NEON_PRODUCTION_DATABASE_URL=${{ vars.NEON_PRODUCTION_DATABASE_URL }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -215,6 +222,61 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Build NativePHP PostgreSQL PHP binary
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $extensions = @(
+            ((Get-Content vendor/nativephp/php-bin/php-extensions.txt -Raw).Trim() -split ','),
+            'pgsql',
+            'pdo_pgsql'
+          ) | Where-Object { $_ -and $_.Trim() -ne '' } | ForEach-Object { $_.Trim() } | Select-Object -Unique
+          $extensionList = $extensions -join ','
+          $libraryList = (Get-Content vendor/nativephp/php-bin/php-libraries.txt -Raw).Trim()
+          $extensionHash = [System.BitConverter]::ToString(
+            [System.Security.Cryptography.MD5]::HashData(
+              [System.Text.Encoding]::UTF8.GetBytes($extensionList)
+            )
+          ).Replace('-', '').ToLowerInvariant()
+
+          Write-Host "NativePHP PHP extensions hash: $extensionHash"
+          Write-Host "NativePHP PostgreSQL extensions requested: SET"
+
+          New-Item -ItemType Directory -Force -Path ../static-php-cli/bin | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/crazywhalecc/static-php-cli/releases/download/${env:SPC_VERSION}/spc-windows-x64.exe" -OutFile ../static-php-cli/bin/spc.exe
+
+          Push-Location ../static-php-cli
+          ./bin/spc.exe doctor
+          ./bin/spc.exe download --with-php=8.4 --for-extensions "$extensionList" --prefer-pre-built
+          Pop-Location
+
+          $zstdVersion = 'v1.5.7'
+          Invoke-WebRequest -Uri "https://github.com/facebook/zstd/releases/download/${zstdVersion}/zstd-${zstdVersion}-win64.zip" -OutFile ../zstd.zip
+          Expand-Archive -Path ../zstd.zip -DestinationPath ..
+          New-Item -ItemType Directory -Force -Path ../static-php-cli/buildroot/lib, ../static-php-cli/buildroot/include | Out-Null
+          Copy-Item "../zstd-${zstdVersion}-win64/static/libzstd_static.lib" ../static-php-cli/buildroot/lib/libzstd.lib
+          Copy-Item "../zstd-${zstdVersion}-win64/include/*.h" ../static-php-cli/buildroot/include/
+          Remove-Item -Recurse -Force ../zstd.zip, "../zstd-${zstdVersion}-win64"
+
+          Push-Location ../static-php-cli
+          ./bin/spc.exe build --build-cli "$extensionList" --with-libs="$libraryList" --debug
+          $loadedExtensions = ./buildroot/bin/php.exe -m
+          if ($loadedExtensions -notcontains 'pdo_pgsql') {
+            throw 'Built NativePHP PHP binary is missing pdo_pgsql.'
+          }
+          if ($loadedExtensions -notcontains 'pgsql') {
+            throw 'Built NativePHP PHP binary is missing pgsql.'
+          }
+          Pop-Location
+
+          $nativePhpPath = Join-Path $PWD '.nativephp-php-bin'
+          $nativePhpZipDir = Join-Path $nativePhpPath 'win/x64'
+          New-Item -ItemType Directory -Force -Path $nativePhpZipDir | Out-Null
+          Compress-Archive -Path ../static-php-cli/buildroot/bin/php.exe -DestinationPath (Join-Path $nativePhpZipDir 'php-8.4.zip') -Force
+
+          "NATIVEPHP_PHP_BINARY_PATH=$nativePhpPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - name: Publish NativePHP Windows app
         run: php artisan native:publish win --no-interaction
 
@@ -244,7 +306,7 @@ jobs:
           }
 
           if (-not $hasLatestYml) {
-            throw "Missing latest.yml asset for ${env:GITHUB_REF_NAME}."
+            throw "Missing latest.yml asset for ${env:RELEASE_TAG_NAME}."
           }
 
       - name: Publish release
