@@ -81,7 +81,7 @@ Required secrets/config are:
 - `NEON_TESTING_DATABASE_URL` with `sslmode=require` for local/dev default data.
 - `NEON_PRODUCTION_DATABASE_URL` with `sslmode=require` for production data and the dev-only production toggle.
 - `APP_API_TOKEN`, a long random token used by the local React app when calling protected Laravel product APIs.
-- GitHub repo Variables `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` for the Windows NativePHP release workflow.
+- GitHub Actions Secrets `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` for the Windows NativePHP release workflow.
 
 `npx neonctl@latest init` is optional AI-assistant setup and is not required for this Laravel/React app. If it hangs, copy the testing and production branch connection strings from the Neon Console instead.
 
@@ -91,7 +91,7 @@ Do not commit Neon database passwords, `APP_API_TOKEN`, GitHub tokens, private k
 
 NativePHP is configured for Windows desktop builds through GitHub Actions. Local NativePHP publishing requires PHP `ext-zip`; normal app development can continue without it.
 
-For the current Windows release model, the release workflow intentionally injects the GitHub repo Variables `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` into the production `.env` before the frontend build and NativePHP publish steps. This is a user-approved packaging exception for this app. The workflow must not echo the values, must only log `SET` or `UNSET`, and must not include `NEON_TESTING_DATABASE_URL` in production release builds.
+For the current Windows release model, the release workflow intentionally injects the GitHub Actions Secrets `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` into the production `.env` before the frontend build and NativePHP publish steps. This is a user-approved packaging exception for this app. The workflow must not echo the values, must only log `SET` or `UNSET`, and must not include `NEON_TESTING_DATABASE_URL` in production release builds. Use Secrets instead of repo Variables because GitHub masks Secrets in workflow logs.
 
 Manual Windows release tests can run `release-windows.yml` from a branch by supplying a plain SemVer `version` input; the workflow publishes assets to the corresponding `v<version>` draft release tag and leaves that manual-test release as a draft.
 

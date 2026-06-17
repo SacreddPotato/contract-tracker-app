@@ -100,7 +100,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - The updater must stay disabled for local development by default.
 - Public GitHub Releases are the default updater source. Private releases require a token strategy that does not bundle long-lived secrets into the packaged app.
 - Treat `ext-zip` as a required PHP extension for NativePHP build environments.
-- Current Windows release exception: the release workflow intentionally packages `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` from GitHub repo Variables into the production app. This is a user-approved exception for the current release model; do not echo their values in logs, only log `SET` or `UNSET`, and do not include `NEON_TESTING_DATABASE_URL` in production release builds.
+- Current Windows release exception: the release workflow intentionally packages `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` from GitHub Actions Secrets into the production app. This is a user-approved exception for the current release model; do not echo their values in logs, only log `SET` or `UNSET`, and do not include `NEON_TESTING_DATABASE_URL` in production release builds. Use Secrets instead of repo Variables because Secrets are masked in workflow logs.
 - NativePHP's default bundled PHP binary does not include PostgreSQL extensions. Windows releases for this Neon-backed app must build and package a custom NativePHP PHP binary with `pgsql` and `pdo_pgsql`, verify those extensions before `native:publish`, and set `NATIVEPHP_PHP_BINARY_PATH` to that custom binary source.
 
 ## GitHub Actions, Tagging, And Releases
@@ -111,7 +111,7 @@ These rules apply to all future AI-assisted work in this project. Follow them be
 - Tag workflows must not run for tag pushes or recursively create additional tags.
 - Every `v*` tag should trigger a Windows NativePHP release build and upload the executable artifacts to a GitHub Release.
 - Release workflows must verify that the GitHub Release contains the Windows installer, blockmap, and `latest.yml` before publishing the release.
-- Release workflows must use GitHub Actions secrets, repo Variables, and environment variables. Do not commit release tokens or production secrets.
+- Release workflows must use GitHub Actions secrets and environment variables. Do not commit release tokens or production secrets.
 
 ## Testing And Verification
 

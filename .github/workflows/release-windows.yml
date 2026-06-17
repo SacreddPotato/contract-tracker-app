@@ -12,7 +12,6 @@ on:
         type: string
 
 permissions:
-  actions: read
   contents: write
 
 jobs:
@@ -107,26 +106,33 @@ jobs:
       GITHUB_RELEASE_TYPE: draft
       WORKFLOW_DISPATCH_VERSION: ${{ inputs.version }}
       SPC_VERSION: 2.8.5
+      APP_API_TOKEN: ${{ secrets.APP_API_TOKEN }}
+      NEON_PRODUCTION_DATABASE_URL: ${{ secrets.NEON_PRODUCTION_DATABASE_URL }}
 
     steps:
-      - name: Mask release variables
+      - name: Validate release secrets
         shell: pwsh
         run: |
-          $appApiToken = gh variable get APP_API_TOKEN --repo "${env:GITHUB_REPOSITORY}"
-          $neonProductionDatabaseUrl = gh variable get NEON_PRODUCTION_DATABASE_URL --repo "${env:GITHUB_REPOSITORY}"
+          $requiredSecrets = @(
+            'APP_API_TOKEN',
+            'NEON_PRODUCTION_DATABASE_URL'
+          )
 
-          if ([string]::IsNullOrWhiteSpace($appApiToken)) {
-            throw 'APP_API_TOKEN repo variable is missing.'
+          foreach ($name in $requiredSecrets) {
+            $value = [Environment]::GetEnvironmentVariable($name)
+            $state = if ([string]::IsNullOrWhiteSpace($value)) { 'UNSET' } else { 'SET' }
+            Write-Host "$name=$state"
           }
-          if ([string]::IsNullOrWhiteSpace($neonProductionDatabaseUrl)) {
-            throw 'NEON_PRODUCTION_DATABASE_URL repo variable is missing.'
+
+          $missing = @(
+            $requiredSecrets | Where-Object {
+              [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_))
+            }
+          )
+
+          if ($missing.Count -gt 0) {
+            throw "Missing required Neon release secrets: $($missing -join ', ')"
           }
-
-          Write-Output "::add-mask::$appApiToken"
-          Write-Output "::add-mask::$neonProductionDatabaseUrl"
-
-          "APP_API_TOKEN=$appApiToken" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "NEON_PRODUCTION_DATABASE_URL=$neonProductionDatabaseUrl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -177,25 +183,25 @@ jobs:
           Copy-Item .env.production.example .env
           php artisan key:generate --ansi
 
-          $requiredVariables = @(
+          $requiredSecrets = @(
             'APP_API_TOKEN',
             'NEON_PRODUCTION_DATABASE_URL'
           )
 
-          foreach ($name in $requiredVariables) {
+          foreach ($name in $requiredSecrets) {
             $value = [Environment]::GetEnvironmentVariable($name)
             $state = if ([string]::IsNullOrWhiteSpace($value)) { 'UNSET' } else { 'SET' }
             Write-Host "$name=$state"
           }
 
           $missing = @(
-            $requiredVariables | Where-Object {
+            $requiredSecrets | Where-Object {
               [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_))
             }
           )
 
           if ($missing.Count -gt 0) {
-            throw "Missing required Neon release variables: $($missing -join ', ')"
+            throw "Missing required Neon release secrets: $($missing -join ', ')"
           }
 
           $envPath = ".env"

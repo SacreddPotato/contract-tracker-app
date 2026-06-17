@@ -55,4 +55,7 @@ test('Windows release builds a NativePHP PHP binary with PostgreSQL support', ()
     assert.match(workflow, /pgsql/);
     assert.match(workflow, /NATIVEPHP_PHP_BINARY_PATH/);
     assert.match(workflow, /Built NativePHP PHP binary is missing pdo_pgsql/);
+    assert.match(workflow, /secrets\.APP_API_TOKEN/);
+    assert.match(workflow, /secrets\.NEON_PRODUCTION_DATABASE_URL/);
+    assert.doesNotMatch(workflow, /gh variable get/);
 });
