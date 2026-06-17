@@ -29,7 +29,7 @@ function jsonResponse(payload: unknown, status = 200): Response {
     });
 }
 
-test('notification API syncs and lists notifications with Supabase bearer token', async () => {
+test('notification API syncs and lists notifications with the app bearer token', async () => {
     const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
         [];
     const fetcher = async (

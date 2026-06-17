@@ -10,15 +10,17 @@ type ApiResourceResponse<T> = {
 
 type EmployeeApiOptions = {
     accessToken: string;
+    databaseBranch?: 'testing' | 'production' | null;
     fetcher?: typeof fetch;
 };
 
 export async function listEmployees({
     accessToken,
+    databaseBranch = null,
     fetcher = fetch,
 }: EmployeeApiOptions): Promise<Employee[]> {
     const response = await fetcher('/api/employees', {
-        headers: authorizedHeaders(accessToken),
+        headers: authorizedHeaders(accessToken, databaseBranch),
     });
 
     if (!response.ok) {
@@ -32,12 +34,12 @@ export async function listEmployees({
 
 export async function createEmployee(
     values: EmployeeFormValues,
-    { accessToken, fetcher = fetch }: EmployeeApiOptions,
+    { accessToken, databaseBranch = null, fetcher = fetch }: EmployeeApiOptions,
 ): Promise<Employee> {
     return employeeFromResponse(
         await fetcher('/api/employees', {
             body: JSON.stringify(values),
-            headers: authorizedJsonHeaders(accessToken),
+            headers: authorizedJsonHeaders(accessToken, databaseBranch),
             method: 'POST',
         }),
     );
@@ -46,12 +48,12 @@ export async function createEmployee(
 export async function updateEmployee(
     employeeId: string,
     values: EmployeeFormValues,
-    { accessToken, fetcher = fetch }: EmployeeApiOptions,
+    { accessToken, databaseBranch = null, fetcher = fetch }: EmployeeApiOptions,
 ): Promise<Employee> {
     return employeeFromResponse(
         await fetcher(`/api/employees/${encodeURIComponent(employeeId)}`, {
             body: JSON.stringify(values),
-            headers: authorizedJsonHeaders(accessToken),
+            headers: authorizedJsonHeaders(accessToken, databaseBranch),
             method: 'PATCH',
         }),
     );
@@ -59,12 +61,12 @@ export async function updateEmployee(
 
 export async function deleteEmployee(
     employeeId: string,
-    { accessToken, fetcher = fetch }: EmployeeApiOptions,
+    { accessToken, databaseBranch = null, fetcher = fetch }: EmployeeApiOptions,
 ): Promise<void> {
     const response = await fetcher(
         `/api/employees/${encodeURIComponent(employeeId)}`,
         {
-            headers: authorizedHeaders(accessToken),
+            headers: authorizedHeaders(accessToken, databaseBranch),
             method: 'DELETE',
         },
     );
@@ -84,16 +86,31 @@ async function employeeFromResponse(response: Response): Promise<Employee> {
     return payload.data;
 }
 
-function authorizedHeaders(accessToken: string): HeadersInit {
-    return {
+function authorizedHeaders(
+    accessToken: string,
+    databaseBranch: EmployeeApiOptions['databaseBranch'] = null,
+): HeadersInit {
+    return withoutNullHeaders({
         Accept: 'application/json',
         Authorization: `Bearer ${accessToken}`,
+        'X-App-Database-Branch': databaseBranch,
+    });
+}
+
+function authorizedJsonHeaders(
+    accessToken: string,
+    databaseBranch: EmployeeApiOptions['databaseBranch'] = null,
+): HeadersInit {
+    return {
+        ...authorizedHeaders(accessToken, databaseBranch),
+        'Content-Type': 'application/json',
     };
 }
 
-function authorizedJsonHeaders(accessToken: string): HeadersInit {
-    return {
-        ...authorizedHeaders(accessToken),
-        'Content-Type': 'application/json',
-    };
+function withoutNullHeaders(
+    headers: Record<string, string | null>,
+): HeadersInit {
+    return Object.fromEntries(
+        Object.entries(headers).filter(([, value]) => value !== null),
+    ) as Record<string, string>;
 }

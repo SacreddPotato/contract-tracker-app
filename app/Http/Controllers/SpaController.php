@@ -16,7 +16,7 @@ class SpaController extends Controller
             'native' => [
                 'running' => (bool) config('nativephp-internal.running'),
             ],
-            'supabase' => $this->runtimeSupabaseConfig(),
+            'api' => $this->runtimeAppApiConfig(),
         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         $locale = e(str_replace('_', '-', app()->getLocale()));
         $title = e(config('app.name', 'Laravel'));
@@ -77,16 +77,18 @@ class SpaController extends Controller
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, bool|string>
      */
-    private function runtimeSupabaseConfig(): array
+    private function runtimeAppApiConfig(): array
     {
         return collect([
-            'publishableKey' => config('supabase.publishable_key'),
-            'url' => config('supabase.url'),
+            'databaseBranch' => config('neon.default_branch'),
+            'databaseBranchHeader' => config('neon.branch_header'),
+            'databaseBranchToggleEnabled' => config('neon.dev_branch_toggle_enabled'),
+            'token' => config('app.api_token'),
         ])
-            ->filter(fn ($value) => is_string($value) && trim($value) !== '')
-            ->map(fn (string $value) => trim($value))
+            ->filter(fn ($value) => is_bool($value) || (is_string($value) && trim($value) !== ''))
+            ->map(fn ($value) => is_string($value) ? trim($value) : $value)
             ->all();
     }
 }

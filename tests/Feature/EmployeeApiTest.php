@@ -2,62 +2,55 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Support\Facades\Http;
+use App\Models\Employee;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class EmployeeApiTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        config()->set('supabase.url', 'https://project.supabase.co');
-        config()->set('supabase.publishable_key', 'publishable-key');
+        config()->set('app.api_token', 'local-app-token');
     }
 
-    public function test_employee_index_requires_a_supabase_bearer_token(): void
+    public function test_employee_index_requires_the_local_app_token(): void
     {
         $this->getJson('/api/employees')
             ->assertUnauthorized();
     }
 
-    public function test_employee_index_verifies_the_user_and_lists_rows_through_supabase(): void
+    public function test_employee_index_lists_shared_rows_from_the_database(): void
     {
-        Http::fake([
-            'https://project.supabase.co/auth/v1/user' => Http::response([
-                'id' => '11111111-1111-1111-1111-111111111111',
-            ]),
-            'https://project.supabase.co/rest/v1/employees*' => Http::response([
-                $this->employeeRow(),
-            ]),
+        Employee::factory()->create([
+            'contract_end_date' => '2026-12-31',
+            'name' => 'Later Employee',
+        ]);
+        Employee::factory()->create([
+            'contract_end_date' => '2026-06-30',
+            'name' => 'Earlier Employee',
+            'phone_number' => '+20 100 000 0000',
+            'nationality' => 'Egyptian',
+            'email' => 'ahmed@example.com',
         ]);
 
-        $this->withToken('user-token')
+        $this->withToken('local-app-token')
             ->getJson('/api/employees')
             ->assertOk()
-            ->assertJsonPath('data.0.id', 'employee-1')
-            ->assertJsonPath('data.0.ownerId', '11111111-1111-1111-1111-111111111111')
-            ->assertJsonPath('data.0.contractEndDate', '2026-12-31')
+            ->assertJsonPath('data.0.name', 'Earlier Employee')
+            ->assertJsonPath('data.0.ownerId', '0')
+            ->assertJsonPath('data.0.contractEndDate', '2026-06-30')
             ->assertJsonPath('data.0.phoneNumber', '+20 100 000 0000')
             ->assertJsonPath('data.0.nationality', 'Egyptian')
-            ->assertJsonPath('data.0.email', 'ahmed@example.com');
-
-        Http::assertSent(fn ($request) => $request->url() === 'https://project.supabase.co/rest/v1/employees?order=contract_end_date.asc&select=id%2Cowner_id%2Cname%2Cphone_number%2Cnationality%2Cemail%2Ccontract_start_date%2Ccontract_end_date%2Ciqama_start_date%2Ciqama_end_date%2Ccreated_at%2Cupdated_at'
-            && $request->hasHeader('Authorization', 'Bearer user-token')
-            && $request->hasHeader('apikey', 'publishable-key'));
+            ->assertJsonPath('data.0.email', 'ahmed@example.com')
+            ->assertJsonPath('data.1.name', 'Later Employee');
     }
 
-    public function test_employee_store_validates_and_creates_a_row_owned_by_the_supabase_user(): void
+    public function test_employee_store_validates_and_creates_a_shared_database_row(): void
     {
-        Http::fake([
-            'https://project.supabase.co/auth/v1/user' => Http::response([
-                'id' => '11111111-1111-1111-1111-111111111111',
-            ]),
-            'https://project.supabase.co/rest/v1/employees*' => Http::response([
-                $this->employeeRow(),
-            ], 201),
-        ]);
-
         $payload = [
             'contractEndDate' => '2026-12-31',
             'contractStartDate' => '2026-01-01',
@@ -69,25 +62,23 @@ class EmployeeApiTest extends TestCase
             'phoneNumber' => '+20 100 000 0000',
         ];
 
-        $this->withToken('user-token')
+        $this->withToken('local-app-token')
             ->postJson('/api/employees', $payload)
-            ->assertOk()
-            ->assertJsonPath('data.name', 'Ahmed Ali');
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'Ahmed Ali')
+            ->assertJsonPath('data.ownerId', '0');
 
-        Http::assertSent(fn ($request) => $request->method() === 'POST'
-            && $request->url() === 'https://project.supabase.co/rest/v1/employees?select=id,owner_id,name,phone_number,nationality,email,contract_start_date,contract_end_date,iqama_start_date,iqama_end_date,created_at,updated_at'
-            && $request['owner_id'] === '0'
-            && $request['name'] === 'Ahmed Ali'
-            && $request['phone_number'] === '+20 100 000 0000'
-            && $request['nationality'] === 'Egyptian'
-            && $request['email'] === 'ahmed@example.com');
+        $this->assertDatabaseHas('employees', [
+            'email' => 'ahmed@example.com',
+            'name' => 'Ahmed Ali',
+            'owner_id' => '0',
+            'phone_number' => '+20 100 000 0000',
+        ]);
     }
 
-    public function test_employee_store_rejects_invalid_payloads_before_supabase_writes(): void
+    public function test_employee_store_rejects_invalid_payloads_before_database_writes(): void
     {
-        Http::fake();
-
-        $this->withToken('user-token')
+        $this->withToken('local-app-token')
             ->postJson('/api/employees', [
                 'contractEndDate' => '',
                 'contractStartDate' => 'not-a-date',
@@ -100,14 +91,12 @@ class EmployeeApiTest extends TestCase
                 'name',
             ]);
 
-        Http::assertNothingSent();
+        $this->assertDatabaseCount('employees', 0);
     }
 
-    public function test_employee_store_rejects_invalid_optional_email_before_supabase_writes(): void
+    public function test_employee_store_rejects_invalid_optional_email_before_database_writes(): void
     {
-        Http::fake();
-
-        $this->withToken('user-token')
+        $this->withToken('local-app-token')
             ->postJson('/api/employees', [
                 'contractEndDate' => '2026-12-31',
                 'contractStartDate' => '2026-01-01',
@@ -119,18 +108,13 @@ class EmployeeApiTest extends TestCase
                 'email',
             ]);
 
-        Http::assertNothingSent();
+        $this->assertDatabaseCount('employees', 0);
     }
 
-    public function test_employee_update_and_delete_are_forwarded_with_the_user_token(): void
+    public function test_employee_update_and_delete_use_database_rows(): void
     {
-        Http::fake([
-            'https://project.supabase.co/auth/v1/user' => Http::response([
-                'id' => '11111111-1111-1111-1111-111111111111',
-            ]),
-            'https://project.supabase.co/rest/v1/employees*' => Http::sequence()
-                ->push([$this->employeeRow(name: 'Updated Name')])
-                ->push([], 204),
+        $employee = Employee::factory()->create([
+            'name' => 'Ahmed Ali',
         ]);
 
         $payload = [
@@ -144,43 +128,26 @@ class EmployeeApiTest extends TestCase
             'phoneNumber' => '',
         ];
 
-        $this->withToken('user-token')
-            ->patchJson('/api/employees/employee-1', $payload)
+        $this->withToken('local-app-token')
+            ->patchJson("/api/employees/{$employee->id}", $payload)
             ->assertOk()
-            ->assertJsonPath('data.name', 'Updated Name');
+            ->assertJsonPath('data.name', 'Updated Name')
+            ->assertJsonPath('data.phoneNumber', null)
+            ->assertJsonPath('data.email', null);
 
-        $this->withToken('user-token')
-            ->deleteJson('/api/employees/employee-1')
+        $this->assertDatabaseHas('employees', [
+            'id' => $employee->id,
+            'email' => null,
+            'name' => 'Updated Name',
+            'phone_number' => null,
+        ]);
+
+        $this->withToken('local-app-token')
+            ->deleteJson("/api/employees/{$employee->id}")
             ->assertNoContent();
 
-        Http::assertSent(fn ($request) => $request->method() === 'PATCH'
-            && str_contains($request->url(), '/employees?id=eq.employee-1')
-            && $request['name'] === 'Updated Name'
-            && $request['phone_number'] === null
-            && $request['nationality'] === 'Egyptian'
-            && $request['email'] === null);
-        Http::assertSent(fn ($request) => $request->method() === 'DELETE'
-            && str_contains($request->url(), '/employees?id=eq.employee-1'));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function employeeRow(string $name = 'Ahmed Ali'): array
-    {
-        return [
-            'contract_end_date' => '2026-12-31',
-            'contract_start_date' => '2026-01-01',
-            'created_at' => '2026-06-04T10:30:00Z',
-            'email' => 'ahmed@example.com',
-            'id' => 'employee-1',
-            'iqama_end_date' => null,
-            'iqama_start_date' => null,
-            'name' => $name,
-            'nationality' => 'Egyptian',
-            'owner_id' => '11111111-1111-1111-1111-111111111111',
-            'phone_number' => '+20 100 000 0000',
-            'updated_at' => '2026-06-04T10:30:00Z',
-        ];
+        $this->assertDatabaseMissing('employees', [
+            'id' => $employee->id,
+        ]);
     }
 }

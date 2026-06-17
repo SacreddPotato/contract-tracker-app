@@ -32,7 +32,7 @@ function jsonResponse(payload: unknown, status = 200): Response {
     });
 }
 
-test('employee API lists employees with Supabase bearer token', async () => {
+test('employee API lists employees with the app bearer token', async () => {
     const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
         [];
     const fetcher = async (
@@ -52,6 +52,31 @@ test('employee API lists employees with Supabase bearer token', async () => {
     assert.deepEqual(requests[0]?.init?.headers, {
         Accept: 'application/json',
         Authorization: 'Bearer token-1',
+    });
+});
+
+test('employee API can target the selected Neon database branch', async () => {
+    const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+        [];
+    const fetcher = async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+    ): Promise<Response> => {
+        requests.push({ input, init });
+
+        return jsonResponse({ data: [employee] });
+    };
+
+    await listEmployees({
+        accessToken: 'token-1',
+        databaseBranch: 'production',
+        fetcher,
+    });
+
+    assert.deepEqual(requests[0]?.init?.headers, {
+        Accept: 'application/json',
+        Authorization: 'Bearer token-1',
+        'X-App-Database-Branch': 'production',
     });
 });
 
@@ -95,7 +120,7 @@ test('employee API creates and updates employees with JSON payloads', async () =
     assert.equal(requests[0]?.init?.body, JSON.stringify(values));
 });
 
-test('employee API deletes employees with Supabase bearer token', async () => {
+test('employee API deletes employees with the app bearer token', async () => {
     const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
         [];
     const fetcher = async (

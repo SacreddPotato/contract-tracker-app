@@ -13,9 +13,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::apiResource('employees', EmployeeController::class)
-    ->only(['index', 'store', 'update', 'destroy']);
+    ->only(['index', 'store', 'update', 'destroy'])
+    ->middleware(['app.api_token', 'app.product_database_branch']);
 
-Route::prefix('notifications')->name('api.notifications.')->group(function () {
+Route::prefix('notifications')->middleware(['app.api_token', 'app.product_database_branch'])->name('api.notifications.')->group(function () {
     Route::get('/', [EmployeeNotificationController::class, 'index'])->name('index');
     Route::post('/sync', [EmployeeNotificationController::class, 'sync'])->name('sync');
     Route::get('/unread-count', [EmployeeNotificationController::class, 'unreadCount'])->name('unread-count');

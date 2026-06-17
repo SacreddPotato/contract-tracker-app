@@ -70,7 +70,7 @@
             "npm run test:frontend-migrations",
             "npm run test:frontend-schema",
             "npm run test:frontend-updates",
-            "npm run test:frontend-supabase",
+            "npm run test:frontend-api-config",
             "@test"
         ],
         "test": [

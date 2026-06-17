@@ -19,12 +19,12 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useAppApiToken } from '@/hooks/use-app-api-token';
 import { useAppStartup } from '@/hooks/use-app-startup';
 import { useAppUpdates } from '@/hooks/use-app-updates';
 import type { AppUpdateState } from '@/hooks/use-app-updates';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { useNotifications } from '@/hooks/use-notifications';
-import { useSupabaseAnonymousUser } from '@/hooks/use-supabase-anonymous-user';
 import { I18nProvider, useI18n } from '@/i18n';
 import type { TranslationKey } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -39,8 +39,11 @@ function App() {
     const updates = useAppUpdates({ checkOnStartup: true });
     const nativeRuntime = isNativeRuntime();
     const currentView = useCurrentView();
-    const auth = useSupabaseAnonymousUser();
-    const notifications = useNotifications(auth.session?.access_token ?? null);
+    const apiAccess = useAppApiToken();
+    const notifications = useNotifications(
+        apiAccess.token,
+        apiAccess.databaseBranch,
+    );
 
     return (
         <I18nProvider>
@@ -55,6 +58,7 @@ function App() {
                 >
                     {nativeRuntime && <AppTitlebar />}
                     <AppShell
+                        apiAccess={apiAccess}
                         currentView={currentView}
                         nativeChrome={nativeRuntime}
                         notifications={notifications}
@@ -66,7 +70,7 @@ function App() {
                             <NotificationsView notifications={notifications} />
                         ) : (
                             <EmployeeDashboard
-                                auth={auth}
+                                apiAccess={apiAccess}
                                 nativeChrome={nativeRuntime}
                             />
                         )}
@@ -111,12 +115,14 @@ function navigateTo(path: string) {
 }
 
 function AppShell({
+    apiAccess,
     children,
     currentView,
     nativeChrome,
     notifications,
     version,
 }: {
+    apiAccess: ReturnType<typeof useAppApiToken>;
     children: ReactNode;
     currentView: AppView;
     nativeChrome: boolean;
@@ -176,7 +182,10 @@ function AppShell({
                 </footer>
             </aside>
             <div className="min-w-0 flex-1 overflow-auto">
-                <div className="sticky top-0 z-20 flex h-14 items-center justify-end border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+                <div className="sticky top-0 z-20 flex h-14 items-center justify-end gap-2 border-b bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+                    {apiAccess.databaseBranchToggleEnabled && (
+                        <DatabaseBranchSwitch apiAccess={apiAccess} />
+                    )}
                     <Button
                         aria-label={t('notificationsBell')}
                         className="relative"
@@ -252,6 +261,32 @@ type NotificationsState = {
     retry: () => void;
     unreadCount: number;
 };
+
+function DatabaseBranchSwitch({
+    apiAccess,
+}: {
+    apiAccess: ReturnType<typeof useAppApiToken>;
+}) {
+    return (
+        <label className="flex items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
+            <span>Dev DB</span>
+            <select
+                className="h-8 rounded-md border bg-background px-2 text-xs text-foreground"
+                onChange={(event) => {
+                    apiAccess.setDatabaseBranch(
+                        event.target.value === 'production'
+                            ? 'production'
+                            : 'testing',
+                    );
+                }}
+                value={apiAccess.databaseBranch}
+            >
+                <option value="testing">testing</option>
+                <option value="production">production</option>
+            </select>
+        </label>
+    );
+}
 
 function NotificationsView({
     notifications,

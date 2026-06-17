@@ -4,60 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\EmployeeNotificationResource;
 use App\Services\Employees\EmployeeNotificationService;
-use App\Services\Supabase\SupabaseAuthService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class EmployeeNotificationController extends Controller
 {
-    public function __construct(
-        private readonly EmployeeNotificationService $notifications,
-        private readonly SupabaseAuthService $auth,
-    ) {}
+    public function __construct(private readonly EmployeeNotificationService $notifications) {}
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(): AnonymousResourceCollection
     {
-        $this->auth->userFromRequest($request);
-
         return EmployeeNotificationResource::collection(
-            $this->notifications->list((string) $request->bearerToken()),
+            $this->notifications->list(),
         );
     }
 
-    public function sync(Request $request): AnonymousResourceCollection
+    public function sync(): AnonymousResourceCollection
     {
-        $this->auth->userFromRequest($request);
-
         return EmployeeNotificationResource::collection(
-            $this->notifications->syncDueContractNotifications((string) $request->bearerToken()),
+            $this->notifications->syncDueContractNotifications(),
         );
     }
 
-    public function unreadCount(Request $request): JsonResponse
+    public function unreadCount(): JsonResponse
     {
-        $this->auth->userFromRequest($request);
-
         return response()->json([
-            'unreadCount' => $this->notifications->unreadCount((string) $request->bearerToken()),
+            'unreadCount' => $this->notifications->unreadCount(),
         ]);
     }
 
-    public function markRead(Request $request, string $notification): EmployeeNotificationResource
+    public function markRead(string $notification): EmployeeNotificationResource
     {
-        $this->auth->userFromRequest($request);
-
         return EmployeeNotificationResource::make(
-            $this->notifications->markRead((string) $request->bearerToken(), $notification),
+            $this->notifications->markRead($notification),
         );
     }
 
-    public function markAllRead(Request $request): JsonResponse
+    public function markAllRead(): JsonResponse
     {
-        $this->auth->userFromRequest($request);
-
         return response()->json([
-            'unreadCount' => $this->notifications->markAllRead((string) $request->bearerToken()),
+            'unreadCount' => $this->notifications->markAllRead(),
         ]);
     }
 }

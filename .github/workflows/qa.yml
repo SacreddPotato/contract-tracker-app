@@ -75,13 +75,19 @@ jobs:
       - name: Frontend employee tests
         run: npm run test:frontend-employees
 
-      - name: Frontend Supabase config tests
-        run: npm run test:frontend-supabase
+      - name: Frontend app API config tests
+        run: npm run test:frontend-api-config
 
       - name: Frontend API tests
         run: npm run test:frontend-api
 
-      - name: Supabase schema tests
+      - name: Frontend notification API tests
+        run: npm run test:frontend-notifications
+
+      - name: Neon migration tests
+        run: npm run test:frontend-migrations
+
+      - name: Neon schema tests
         run: npm run test:frontend-schema
 
       - name: Build frontend

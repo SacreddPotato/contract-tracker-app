@@ -31,30 +31,32 @@ class DashboardTest extends TestCase
             ->assertDontSee('data-page', false);
     }
 
-    public function test_dashboard_shell_includes_runtime_supabase_web_config()
+    public function test_dashboard_shell_includes_runtime_app_api_token()
     {
-        config()->set('supabase.url', 'https://test-project.supabase.co');
-        config()->set('supabase.publishable_key', 'test-publishable-key');
+        config()->set('app.api_token', 'test-local-token');
+        config()->set('neon.default_branch', 'testing');
+        config()->set('neon.dev_branch_toggle_enabled', true);
 
         $response = $this->get(route('dashboard'));
 
         $response
             ->assertOk()
             ->assertSee('window.__contractTrackerConfig', false)
-            ->assertSee('"url":"https:\/\/test-project.supabase.co"', false)
-            ->assertSee('"publishableKey":"test-publishable-key"', false);
+            ->assertSee('"databaseBranch":"testing"', false)
+            ->assertSee('"databaseBranchToggleEnabled":true', false)
+            ->assertSee('"token":"test-local-token"', false);
     }
 
-    public function test_dashboard_shell_omits_empty_runtime_supabase_web_config_values()
+    public function test_dashboard_shell_omits_empty_runtime_app_api_token()
     {
-        config()->set('supabase.url', '   ');
-        config()->set('supabase.publishable_key', '');
+        config()->set('app.api_token', '   ');
 
         $response = $this->get(route('dashboard'));
 
         $response
             ->assertOk()
             ->assertSee('window.__contractTrackerConfig', false)
-            ->assertSee('"supabase":[]', false);
+            ->assertSee('"databaseBranch"', false)
+            ->assertDontSee('"token"', false);
     }
 }

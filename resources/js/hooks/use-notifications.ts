@@ -12,6 +12,7 @@ import type { EmployeeNotification } from '@/services/notification-api';
 
 type NotificationSubscriptionState = {
     accessToken: string | null;
+    databaseBranch: 'testing' | 'production' | null;
     error: Error | null;
     notifications: EmployeeNotification[];
     subscriptionKey: number;
@@ -30,9 +31,11 @@ type NotificationsState = {
 
 export function useNotifications(
     accessToken: string | null,
+    databaseBranch: 'testing' | 'production' | null = null,
 ): NotificationsState {
     const [state, setState] = useState<NotificationSubscriptionState>({
         accessToken: null,
+        databaseBranch: null,
         error: null,
         notifications: [],
         subscriptionKey: 0,
@@ -46,15 +49,23 @@ export function useNotifications(
         }
 
         const currentAccessToken = accessToken;
+        const currentDatabaseBranch = databaseBranch;
         let cancelled = false;
 
         async function loadNotifications() {
             await syncContractNotifications({
                 accessToken: currentAccessToken,
+                databaseBranch: currentDatabaseBranch,
             });
             const [notifications, unreadCount] = await Promise.all([
-                listNotifications({ accessToken: currentAccessToken }),
-                unreadNotificationCount({ accessToken: currentAccessToken }),
+                listNotifications({
+                    accessToken: currentAccessToken,
+                    databaseBranch: currentDatabaseBranch,
+                }),
+                unreadNotificationCount({
+                    accessToken: currentAccessToken,
+                    databaseBranch: currentDatabaseBranch,
+                }),
             ]);
 
             if (cancelled) {
@@ -63,6 +74,7 @@ export function useNotifications(
 
             setState({
                 accessToken: currentAccessToken,
+                databaseBranch: currentDatabaseBranch,
                 error: null,
                 notifications,
                 subscriptionKey,
@@ -77,6 +89,7 @@ export function useNotifications(
 
             setState({
                 accessToken: currentAccessToken,
+                databaseBranch: currentDatabaseBranch,
                 error:
                     nextError instanceof Error
                         ? nextError
@@ -90,7 +103,7 @@ export function useNotifications(
         return () => {
             cancelled = true;
         };
-    }, [accessToken, subscriptionKey]);
+    }, [accessToken, databaseBranch, subscriptionKey]);
 
     const markRead = useCallback(
         async (notificationId: string) => {
@@ -100,6 +113,7 @@ export function useNotifications(
 
             const notification = await markNotificationRead(notificationId, {
                 accessToken,
+                databaseBranch,
             });
 
             setState((current) => ({
@@ -117,7 +131,7 @@ export function useNotifications(
                 ),
             }));
         },
-        [accessToken],
+        [accessToken, databaseBranch],
     );
 
     const markAllRead = useCallback(async () => {
@@ -125,7 +139,10 @@ export function useNotifications(
             throw new Error('Notification storage is unavailable.');
         }
 
-        const unreadCount = await markAllNotificationsRead({ accessToken });
+        const unreadCount = await markAllNotificationsRead({
+            accessToken,
+            databaseBranch,
+        });
         const readAt = new Date().toISOString();
 
         setState((current) => ({
@@ -136,21 +153,33 @@ export function useNotifications(
             })),
             unreadCount,
         }));
-    }, [accessToken]);
+    }, [accessToken, databaseBranch]);
 
     return {
-        error: state.accessToken === accessToken ? state.error : null,
+        error:
+            state.accessToken === accessToken &&
+            state.databaseBranch === databaseBranch
+                ? state.error
+                : null,
         isLoading:
             Boolean(accessToken) &&
             (state.accessToken !== accessToken ||
+                state.databaseBranch !== databaseBranch ||
                 state.subscriptionKey !== subscriptionKey),
         markAllRead,
         markRead,
         notifications:
-            state.accessToken === accessToken ? state.notifications : [],
+            state.accessToken === accessToken &&
+            state.databaseBranch === databaseBranch
+                ? state.notifications
+                : [],
         retry: () => {
             setSubscriptionKey((key) => key + 1);
         },
-        unreadCount: state.accessToken === accessToken ? state.unreadCount : 0,
+        unreadCount:
+            state.accessToken === accessToken &&
+            state.databaseBranch === databaseBranch
+                ? state.unreadCount
+                : 0,
     };
 }

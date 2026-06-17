@@ -15,14 +15,14 @@ const languageStorageKey = 'contract-tracker-language';
 const translations = {
     en: {
         addEmployee: 'Add employee',
-        anonymousAuthUnavailable:
-            'Supabase is configured, but anonymous sign-in is unavailable. Enable Anonymous Sign-Ins in Supabase Auth, then reload the app.',
+        appApiTokenMissing:
+            'The app API token is not configured. Add APP_API_TOKEN to start tracking employees.',
         appNavigationTitle: 'August International Schools - Contract Tracker',
         appVersion: 'Version {version}',
         appVersionLoading: 'Loading version',
         authLoading: 'Preparing your workspace',
         authStateUnavailable:
-            'Supabase authentication is temporarily unavailable. Reload the app or check the Supabase project settings.',
+            'App API access is temporarily unavailable. Reload the app or check the local app token setting.',
         cancel: 'Cancel',
         closeDialog: 'Close',
         confirmDelete: 'Delete',
@@ -58,8 +58,6 @@ const translations = {
         employeeDetails: 'Employee details',
         employeeEmail: 'Email',
         employeeEmailInvalid: 'Use a valid email address.',
-        supabaseMissing:
-            'Supabase is not configured. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to start tracking employees.',
         formHelp:
             'Required fields are name, contract start date, and contract end date. Employee details are optional.',
         filterAllDeadlines: 'Show all',
@@ -141,6 +139,8 @@ const translations = {
         windowRestore: 'Restore window',
     },
     ar: {
+        appApiTokenMissing:
+            'APP_API_TOKEN is not configured. Add it to start tracking employees.',
         deadlineFilter: 'تصفية الموعد',
         exportColumns: 'أعمدة التصدير',
         exportTable: 'تصدير',
@@ -157,14 +157,12 @@ const translations = {
         tableTimeUntilContractEnd: 'المدة حتى نهاية العقد',
         tableTimeUntilIqamaEnd: 'المدة حتى نهاية الإقامة',
         addEmployee: 'إضافة موظف',
-        anonymousAuthUnavailable:
-            'تم إعداد Supabase، لكن تسجيل الدخول المجهول غير متاح. فعّل تسجيل الدخول المجهول في Supabase Auth ثم أعد تحميل التطبيق.',
         appNavigationTitle: 'مدارس أغسطس الدولية - متتبع العقود',
         appVersion: 'الإصدار {version}',
         appVersionLoading: 'جار تحميل الإصدار',
         authLoading: 'جار تجهيز مساحة العمل',
         authStateUnavailable:
-            'مصادقة Supabase غير متاحة مؤقتا. أعد تحميل التطبيق أو تحقق من إعدادات مشروع Supabase.',
+            'App API access is temporarily unavailable. Reload the app or check the local app token setting.',
         cancel: 'إلغاء',
         closeDialog: 'إغلاق',
         confirmDelete: 'حذف',
@@ -193,8 +191,6 @@ const translations = {
         employeeDetails: 'بيانات الموظف',
         employeeEmail: 'البريد الإلكتروني',
         employeeEmailInvalid: 'استخدم بريدا إلكترونيا صحيحا.',
-        supabaseMissing:
-            'لم يتم إعداد Supabase. أضف SUPABASE_URL و SUPABASE_PUBLISHABLE_KEY لبدء متابعة الموظفين.',
         formHelp:
             'الحقول المطلوبة هي الاسم وتاريخ بداية العقد وتاريخ نهاية العقد. بيانات الموظف اختيارية.',
         iqamaDates: 'تواريخ الإقامة',

@@ -1,6 +1,6 @@
 # Contract Tracker
 
-Contract Tracker is a Laravel API + React frontend application. Product data uses Supabase Auth plus Supabase Postgres, with Row Level Security as the access-control boundary.
+Contract Tracker is a Laravel API + React frontend application. Product data is stored in Neon Postgres through Laravel migrations, Eloquent models, services, API resources, and API routes.
 
 ## Local Development
 
@@ -18,14 +18,29 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-Fill these Supabase values from Supabase Dashboard > Project Settings > API:
+Fill the Neon database and local API token values:
 
 ```env
-SUPABASE_URL=
-SUPABASE_PUBLISHABLE_KEY=
+APP_DATA_STORE=neon
+APP_API_TOKEN=
+NEON_DEFAULT_DATABASE_BRANCH=testing
+NEON_TESTING_DATABASE_URL=postgresql://USER:PASSWORD@TESTING-HOST/DBNAME?sslmode=require
+NEON_PRODUCTION_DATABASE_URL=postgresql://USER:PASSWORD@PRODUCTION-HOST/DBNAME?sslmode=require
+
+DB_CONNECTION=pgsql
+DB_URL="${NEON_TESTING_DATABASE_URL}"
+DB_SSLMODE=require
 ```
 
-Enable Auth > Anonymous Sign-Ins in Supabase before running the app.
+You can use the split `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` values instead of `DB_URL`.
+
+Local development defaults to the Neon `testing` branch. The React app shows a dev-only database branch switch when `APP_ENV=local`; selecting `production` sends a request header that Laravel only honors when the dev toggle is enabled. Production builds should use `NEON_DEFAULT_DATABASE_BRANCH=production` and `DB_URL="${NEON_PRODUCTION_DATABASE_URL}"`.
+
+Run pending migrations against a local or test-safe Neon branch/database:
+
+```powershell
+npm run neon:migrate
+```
 
 Check the local setup:
 
@@ -52,43 +67,30 @@ npm run build
 npm run test:frontend-api
 npm run test:frontend-migrations
 npm run test:frontend-schema
-npm run test:frontend-supabase
+npm run test:frontend-api-config
 ```
 
-## Supabase
+## Neon
 
-Supabase schema changes are migration-first. Do not edit `supabase/schema.sql` manually. Create a migration, apply it, then regenerate the schema snapshot from the database.
+Neon schema changes are Laravel migration-first. Create timestamped migrations in `database/migrations`, pair new product models with factories, and verify with Laravel feature tests plus the frontend migration/schema checks.
 
-Link the Supabase CLI to the remote project from `SUPABASE_URL`:
+Use a direct/unpooled Neon Postgres connection for Laravel migrations and this desktop-first runtime unless runtime concurrency later requires a pooled connection.
 
-```powershell
-npm run supabase:link
-```
+Required secrets/config are:
 
-If the CLI is not logged in, run `npx supabase login` or set `SUPABASE_ACCESS_TOKEN` locally. If your Supabase URL is not available, set `SUPABASE_PROJECT_REF` locally. If the CLI asks for the database password, set `SUPABASE_DB_PASSWORD` locally for that command. Do not commit any secret-bearing value.
+- `NEON_TESTING_DATABASE_URL` with `sslmode=require` for local/dev default data.
+- `NEON_PRODUCTION_DATABASE_URL` with `sslmode=require` for production data and the dev-only production toggle.
+- `APP_API_TOKEN`, a long random token used by the local React app when calling protected Laravel product APIs.
+- GitHub repo Variables `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` for the Windows NativePHP release workflow.
 
-Create a migration:
+`npx neonctl@latest init` is optional AI-assistant setup and is not required for this Laravel/React app. If it hangs, copy the testing and production branch connection strings from the Neon Console instead.
 
-```powershell
-npm run supabase:migration:new -- add_employee_contact_fields
-```
-
-Apply pending migrations to the linked remote project:
-
-```powershell
-npm run supabase:migrate
-```
-
-Regenerate the reviewed schema snapshot from the linked remote database:
-
-```powershell
-npm run supabase:schema:dump
-```
-
-Run `npm run test:frontend-migrations` and `npm run test:frontend-schema` after changing migrations or schema output.
-
-The Supabase URL and publishable key are safe public app config. Do not commit or package `sb_secret_...`, legacy `service_role` keys, database passwords, or service-account credentials.
+Do not commit Neon database passwords, `APP_API_TOKEN`, GitHub tokens, private keys, or other secret-bearing values. Commit only safe placeholders in `.env.example` and `.env.production.example`.
 
 ## NativePHP Releases
 
 NativePHP is configured for Windows desktop builds through GitHub Actions. Local NativePHP publishing requires PHP `ext-zip`; normal app development can continue without it.
+
+For the current Windows release model, the release workflow intentionally injects the GitHub repo Variables `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` into the production `.env` before the frontend build and NativePHP publish steps. This is a user-approved packaging exception for this app. The workflow must not echo the values, must only log `SET` or `UNSET`, and must not include `NEON_TESTING_DATABASE_URL` in production release builds.
+
+Manual Windows release tests can run `release-windows.yml` from a branch by supplying a plain SemVer `version` input; the workflow publishes against the corresponding `v<version>` draft release tag.

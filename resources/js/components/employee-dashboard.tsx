@@ -39,8 +39,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import type { AppApiTokenState } from '@/hooks/use-app-api-token';
 import { useEmployees } from '@/hooks/use-employees';
-import type { SupabaseAnonymousUserState } from '@/hooks/use-supabase-anonymous-user';
 import { useI18n } from '@/i18n';
 import type { TranslationKey } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -91,14 +91,17 @@ const statusClasses: Record<ContractStatus, string> = {
 const deadlineFilterOptions: EmployeeDeadlineFilter[] = [30, 60, 90];
 
 export function EmployeeDashboard({
-    auth,
+    apiAccess,
     nativeChrome = false,
 }: {
-    auth: SupabaseAnonymousUserState;
+    apiAccess: AppApiTokenState;
     nativeChrome?: boolean;
 }) {
     const { direction, language, setLanguage, t } = useI18n();
-    const employeesState = useEmployees(auth.session?.access_token ?? null);
+    const employeesState = useEmployees(
+        apiAccess.token,
+        apiAccess.databaseBranch,
+    );
     const [formOpen, setFormOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(
         null,
@@ -182,7 +185,7 @@ export function EmployeeDashboard({
                                 : t('languageEnglish')}
                         </Button>
                         <Button
-                            disabled={!auth.user}
+                            disabled={!apiAccess.token}
                             onClick={openCreateDialog}
                             type="button"
                         >
@@ -192,15 +195,13 @@ export function EmployeeDashboard({
                     </div>
                 </header>
 
-                {auth.error && (
+                {apiAccess.error && (
                     <Alert variant="destructive">
                         <AlertCircle className="size-4" />
                         <AlertDescription>
-                            {auth.errorReason === 'configurationMissing'
-                                ? t('supabaseMissing')
-                                : auth.errorReason === 'anonymousSignInFailed'
-                                  ? t('anonymousAuthUnavailable')
-                                  : t('authStateUnavailable')}
+                            {apiAccess.errorReason === 'configurationMissing'
+                                ? t('appApiTokenMissing')
+                                : t('authStateUnavailable')}
                         </AlertDescription>
                     </Alert>
                 )}
@@ -224,11 +225,11 @@ export function EmployeeDashboard({
                 )}
 
                 <section className="flex-1">
-                    {auth.isLoading || employeesState.isLoading ? (
+                    {apiAccess.isLoading || employeesState.isLoading ? (
                         <div className="flex min-h-72 items-center justify-center gap-3 text-sm text-muted-foreground">
                             <Spinner className="size-5" />
                             <span>
-                                {auth.isLoading
+                                {apiAccess.isLoading
                                     ? t('authLoading')
                                     : t('loadingEmployees')}
                             </span>

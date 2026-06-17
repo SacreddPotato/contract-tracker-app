@@ -6,9 +6,11 @@ declare global {
             native?: Partial<{
                 running: boolean;
             }>;
-            supabase?: Partial<{
-                publishableKey: string | null;
-                url: string | null;
+            api?: Partial<{
+                databaseBranch: 'testing' | 'production' | null;
+                databaseBranchHeader: string | null;
+                databaseBranchToggleEnabled: boolean | null;
+                token: string | null;
             }>;
         };
     }

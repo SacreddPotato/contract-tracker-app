@@ -4,8 +4,10 @@ import { existsSync, readFileSync } from 'node:fs';
 const requiredEnvKeys = [
     'APP_KEY',
     'APP_DATA_STORE',
-    'SUPABASE_URL',
-    'SUPABASE_PUBLISHABLE_KEY',
+    'APP_API_TOKEN',
+    'DB_CONNECTION',
+    'NEON_DEFAULT_DATABASE_BRANCH',
+    'NEON_TESTING_DATABASE_URL',
     'NATIVEPHP_APP_VERSION',
     'NATIVEPHP_APP_ID',
     'NATIVEPHP_UPDATER_ENABLED',
@@ -58,31 +60,13 @@ function phpHasZip() {
         .includes('zip');
 }
 
-function commandExists(command, args = ['--version']) {
-    const result = spawnCommand(command, args);
-
-    return !result.error && result.status === 0;
-}
-
-function spawnCommand(command, args) {
-    if (process.platform === 'win32') {
-        return spawnSync('cmd.exe', ['/d', '/s', '/c', [command, ...args].join(' ')], {
-            encoding: 'utf8',
-        });
-    }
-
-    return spawnSync(command, args, {
-        encoding: 'utf8',
-    });
-}
-
 const env = loadEnvFile();
 const failures = [];
 const warnings = [];
 
 if (!env) {
     failures.push(
-        'Missing .env file. Copy .env.example to .env and fill in the Supabase public config.',
+        'Missing .env file. Copy .env.example to .env and fill in the Neon database config.',
     );
 } else {
     for (const key of requiredEnvKeys) {
@@ -91,31 +75,29 @@ if (!env) {
         }
     }
 
-    if (env.APP_DATA_STORE !== 'supabase') {
-        failures.push('APP_DATA_STORE must be supabase for this project.');
+    if (env.APP_DATA_STORE !== 'neon') {
+        failures.push('APP_DATA_STORE must be neon for this project.');
+    }
+
+    if (env.DB_CONNECTION !== 'pgsql') {
+        failures.push('DB_CONNECTION must be pgsql for Neon-backed product data.');
+    }
+
+    if (!env.DB_URL && (!env.DB_HOST || !env.DB_DATABASE || !env.DB_USERNAME || !env.DB_PASSWORD)) {
+        failures.push('Set DB_URL or DB_HOST, DB_DATABASE, DB_USERNAME, and DB_PASSWORD for Neon.');
+    }
+
+    if (env.NEON_DEFAULT_DATABASE_BRANCH !== 'testing') {
+        failures.push('NEON_DEFAULT_DATABASE_BRANCH must be testing for local development.');
+    }
+
+    if (!env.NEON_PRODUCTION_DATABASE_URL) {
+        warnings.push('NEON_PRODUCTION_DATABASE_URL is missing. The dev database toggle cannot switch to production.');
     }
 }
 
 if (!existsSync('node_modules')) {
     failures.push('Missing node_modules. Run npm install.');
-}
-
-if (!existsSync('supabase/config.toml')) {
-    failures.push('Missing supabase/config.toml. Run npx supabase init.');
-}
-
-if (!existsSync('supabase/migrations')) {
-    failures.push('Missing supabase/migrations directory.');
-}
-
-if (!commandExists('supabase')) {
-    failures.push('Supabase CLI is unavailable. Run npm install.');
-}
-
-if (!existsSync('supabase/.temp/project-ref')) {
-    warnings.push(
-        'Supabase CLI is not linked to the remote project. Run npm run supabase:link before applying remote migrations.',
-    );
 }
 
 if (!existsSync('vendor')) {
@@ -158,8 +140,8 @@ if (warnings.length > 0) {
     }
 }
 
-const supabaseUrl = env?.SUPABASE_URL;
+const neonTarget = env?.DB_URL || env?.DB_HOST;
 
-if (supabaseUrl) {
-    console.log(`Supabase project configured: ${supabaseUrl}`);
+if (neonTarget) {
+    console.log(`Neon database configured: ${neonTarget}`);
 }

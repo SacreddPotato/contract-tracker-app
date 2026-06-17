@@ -22,16 +22,18 @@ export type EmployeeNotification = {
 
 type NotificationApiOptions = {
     accessToken: string;
+    databaseBranch?: 'testing' | 'production' | null;
     fetcher?: typeof fetch;
 };
 
 export async function syncContractNotifications({
     accessToken,
+    databaseBranch = null,
     fetcher = fetch,
 }: NotificationApiOptions): Promise<EmployeeNotification[]> {
     return notificationCollectionFromResponse(
         await fetcher('/api/notifications/sync', {
-            headers: authorizedHeaders(accessToken),
+            headers: authorizedHeaders(accessToken, databaseBranch),
             method: 'POST',
         }),
     );
@@ -39,21 +41,23 @@ export async function syncContractNotifications({
 
 export async function listNotifications({
     accessToken,
+    databaseBranch = null,
     fetcher = fetch,
 }: NotificationApiOptions): Promise<EmployeeNotification[]> {
     return notificationCollectionFromResponse(
         await fetcher('/api/notifications', {
-            headers: authorizedHeaders(accessToken),
+            headers: authorizedHeaders(accessToken, databaseBranch),
         }),
     );
 }
 
 export async function unreadNotificationCount({
     accessToken,
+    databaseBranch = null,
     fetcher = fetch,
 }: NotificationApiOptions): Promise<number> {
     const response = await fetcher('/api/notifications/unread-count', {
-        headers: authorizedHeaders(accessToken),
+        headers: authorizedHeaders(accessToken, databaseBranch),
     });
 
     if (!response.ok) {
@@ -67,13 +71,17 @@ export async function unreadNotificationCount({
 
 export async function markNotificationRead(
     notificationId: string,
-    { accessToken, fetcher = fetch }: NotificationApiOptions,
+    {
+        accessToken,
+        databaseBranch = null,
+        fetcher = fetch,
+    }: NotificationApiOptions,
 ): Promise<EmployeeNotification> {
     return notificationFromResponse(
         await fetcher(
             `/api/notifications/${encodeURIComponent(notificationId)}/read`,
             {
-                headers: authorizedHeaders(accessToken),
+                headers: authorizedHeaders(accessToken, databaseBranch),
                 method: 'PATCH',
             },
         ),
@@ -82,10 +90,11 @@ export async function markNotificationRead(
 
 export async function markAllNotificationsRead({
     accessToken,
+    databaseBranch = null,
     fetcher = fetch,
 }: NotificationApiOptions): Promise<number> {
     const response = await fetcher('/api/notifications/read-all', {
-        headers: authorizedHeaders(accessToken),
+        headers: authorizedHeaders(accessToken, databaseBranch),
         method: 'PATCH',
     });
 
@@ -140,9 +149,21 @@ async function notificationFromResponse(
     return payload.data;
 }
 
-function authorizedHeaders(accessToken: string): HeadersInit {
-    return {
+function authorizedHeaders(
+    accessToken: string,
+    databaseBranch: NotificationApiOptions['databaseBranch'] = null,
+): HeadersInit {
+    return withoutNullHeaders({
         Accept: 'application/json',
         Authorization: `Bearer ${accessToken}`,
-    };
+        'X-App-Database-Branch': databaseBranch,
+    });
+}
+
+function withoutNullHeaders(
+    headers: Record<string, string | null>,
+): HeadersInit {
+    return Object.fromEntries(
+        Object.entries(headers).filter(([, value]) => value !== null),
+    ) as Record<string, string>;
 }

@@ -9,6 +9,7 @@ import {
 import type { Employee, EmployeeFormValues } from '@/services/employee-records';
 
 type EmployeeSubscriptionState = {
+    databaseBranch: 'testing' | 'production' | null;
     employees: Employee[];
     error: Error | null;
     subscriptionKey: number;
@@ -28,9 +29,13 @@ type EmployeesState = {
     ) => Promise<void>;
 };
 
-export function useEmployees(accessToken: string | null): EmployeesState {
+export function useEmployees(
+    accessToken: string | null,
+    databaseBranch: 'testing' | 'production' | null = null,
+): EmployeesState {
     const [state, setState] = useState<EmployeeSubscriptionState>({
         accessToken: null,
+        databaseBranch: null,
         employees: [],
         error: null,
         subscriptionKey: 0,
@@ -44,7 +49,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
 
         let cancelled = false;
 
-        void listEmployees({ accessToken })
+        void listEmployees({ accessToken, databaseBranch })
             .then((nextEmployees) => {
                 if (cancelled) {
                     return;
@@ -52,6 +57,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
 
                 setState({
                     accessToken,
+                    databaseBranch,
                     employees: nextEmployees,
                     error: null,
                     subscriptionKey,
@@ -64,6 +70,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
 
                 setState({
                     accessToken,
+                    databaseBranch,
                     employees: [],
                     error:
                         nextError instanceof Error
@@ -76,7 +83,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
         return () => {
             cancelled = true;
         };
-    }, [accessToken, subscriptionKey]);
+    }, [accessToken, databaseBranch, subscriptionKey]);
 
     const addEmployee = useCallback(
         async (values: EmployeeFormValues) => {
@@ -84,7 +91,10 @@ export function useEmployees(accessToken: string | null): EmployeesState {
                 throw new Error('Employee storage is unavailable.');
             }
 
-            const employee = await createEmployee(values, { accessToken });
+            const employee = await createEmployee(values, {
+                accessToken,
+                databaseBranch,
+            });
 
             setState((current) => ({
                 ...current,
@@ -93,7 +103,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
                 ),
             }));
         },
-        [accessToken],
+        [accessToken, databaseBranch],
     );
 
     const saveEmployeeUpdate = useCallback(
@@ -104,6 +114,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
 
             const employee = await updateEmployee(employeeId, values, {
                 accessToken,
+                databaseBranch,
             });
 
             setState((current) => ({
@@ -117,7 +128,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
                     .sort(sortByContractEndDate),
             }));
         },
-        [accessToken],
+        [accessToken, databaseBranch],
     );
 
     const removeEmployee = useCallback(
@@ -126,7 +137,7 @@ export function useEmployees(accessToken: string | null): EmployeesState {
                 throw new Error('Employee storage is unavailable.');
             }
 
-            await deleteEmployee(employeeId, { accessToken });
+            await deleteEmployee(employeeId, { accessToken, databaseBranch });
 
             setState((current) => ({
                 ...current,
@@ -135,17 +146,26 @@ export function useEmployees(accessToken: string | null): EmployeesState {
                 ),
             }));
         },
-        [accessToken],
+        [accessToken, databaseBranch],
     );
 
     return {
         addEmployee,
         deleteEmployee: removeEmployee,
-        employees: state.accessToken === accessToken ? state.employees : [],
-        error: state.accessToken === accessToken ? state.error : null,
+        employees:
+            state.accessToken === accessToken &&
+            state.databaseBranch === databaseBranch
+                ? state.employees
+                : [],
+        error:
+            state.accessToken === accessToken &&
+            state.databaseBranch === databaseBranch
+                ? state.error
+                : null,
         isLoading:
             Boolean(accessToken) &&
             (state.accessToken !== accessToken ||
+                state.databaseBranch !== databaseBranch ||
                 state.subscriptionKey !== subscriptionKey),
         retry: () => {
             setSubscriptionKey((key) => key + 1);
