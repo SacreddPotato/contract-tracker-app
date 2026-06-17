@@ -12,6 +12,7 @@ on:
         type: string
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
@@ -113,6 +114,13 @@ jobs:
         run: |
           $appApiToken = gh variable get APP_API_TOKEN --repo "${env:GITHUB_REPOSITORY}"
           $neonProductionDatabaseUrl = gh variable get NEON_PRODUCTION_DATABASE_URL --repo "${env:GITHUB_REPOSITORY}"
+
+          if ([string]::IsNullOrWhiteSpace($appApiToken)) {
+            throw 'APP_API_TOKEN repo variable is missing.'
+          }
+          if ([string]::IsNullOrWhiteSpace($neonProductionDatabaseUrl)) {
+            throw 'NEON_PRODUCTION_DATABASE_URL repo variable is missing.'
+          }
 
           Write-Output "::add-mask::$appApiToken"
           Write-Output "::add-mask::$neonProductionDatabaseUrl"
