@@ -93,7 +93,7 @@ jobs:
 
   windows:
     needs: qa
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       NATIVEPHP_UPDATER_ENABLED: true
       NATIVEPHP_UPDATER_PROVIDER: github
@@ -111,10 +111,14 @@ jobs:
       - name: Mask release variables
         shell: pwsh
         run: |
-          Write-Output "::add-mask::${{ vars.APP_API_TOKEN }}"
-          Write-Output "::add-mask::${{ vars.NEON_PRODUCTION_DATABASE_URL }}"
-          "APP_API_TOKEN=${{ vars.APP_API_TOKEN }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "NEON_PRODUCTION_DATABASE_URL=${{ vars.NEON_PRODUCTION_DATABASE_URL }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $appApiToken = gh variable get APP_API_TOKEN --repo "${env:GITHUB_REPOSITORY}"
+          $neonProductionDatabaseUrl = gh variable get NEON_PRODUCTION_DATABASE_URL --repo "${env:GITHUB_REPOSITORY}"
+
+          Write-Output "::add-mask::$appApiToken"
+          Write-Output "::add-mask::$neonProductionDatabaseUrl"
+
+          "APP_API_TOKEN=$appApiToken" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "NEON_PRODUCTION_DATABASE_URL=$neonProductionDatabaseUrl" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -226,6 +230,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
 
           $extensions = @(
             ((Get-Content vendor/nativephp/php-bin/php-extensions.txt -Raw).Trim() -split ','),
@@ -248,6 +253,9 @@ jobs:
 
           Push-Location ../static-php-cli
           ./bin/spc.exe doctor
+          if (-not (Test-Path ./php-sdk-binary-tools/bin/7za.exe)) {
+            throw 'SPC PHP SDK binary tools were not installed.'
+          }
           ./bin/spc.exe download --with-php=8.4 --for-extensions "$extensionList" --prefer-pre-built
           Pop-Location
 
