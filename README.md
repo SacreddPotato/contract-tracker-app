@@ -93,4 +93,4 @@ NativePHP is configured for Windows desktop builds through GitHub Actions. Local
 
 For the current Windows release model, the release workflow intentionally injects the GitHub repo Variables `APP_API_TOKEN` and `NEON_PRODUCTION_DATABASE_URL` into the production `.env` before the frontend build and NativePHP publish steps. This is a user-approved packaging exception for this app. The workflow must not echo the values, must only log `SET` or `UNSET`, and must not include `NEON_TESTING_DATABASE_URL` in production release builds.
 
-Manual Windows release tests can run `release-windows.yml` from a branch by supplying a plain SemVer `version` input; the workflow publishes against the corresponding `v<version>` draft release tag.
+Manual Windows release tests can run `release-windows.yml` from a branch by supplying a plain SemVer `version` input; the workflow publishes assets to the corresponding `v<version>` draft release tag and leaves that manual-test release as a draft.
